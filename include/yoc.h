@@ -177,4 +177,6 @@ size_t str_width(const unsigned char *s, size_t len);
 size_t length_to_width(const unsigned char *s, size_t len);
 size_t width_to_length(const unsigned char *s, size_t width);
 size_t rx_to_cursor_x(Line *line, size_t rx);
+void *xmalloc(size_t size);
+void *xrealloc(void *ptr, size_t size);
 #endif

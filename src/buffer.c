@@ -12,14 +12,8 @@ void buffer_free(Buffer *buffer) {
 	}
 }
 Line *line_insert(Line *prev, Line *next) {
-	Line *line = (Line *)malloc(sizeof(Line));
-	if (!line)
-		die("malloc");
-	line->s = (unsigned char *)malloc(BUFF_SIZE);
-	if (!line->s) {
-		free(line);
-		die("malloc");
-	}
+	Line *line = (Line *)xmalloc(sizeof(Line));
+	line->s = (unsigned char *)xmalloc(BUFF_SIZE);
 	line->s[0] = '\0';
 	line->len = 0;
 	line->cap = BUFF_SIZE;
@@ -53,9 +47,7 @@ void line_insert_str(Line *line, size_t at, const unsigned char *str) {
 		size_t new_cap = line->cap;
 		while (new_len + 1 > new_cap)
 			new_cap = new_cap == 0 ? BUFF_SIZE : new_cap * 2;
-		line->s = (unsigned char *)realloc(line->s, new_cap);
-		if (!line->s)
-			die("realloc");
+		line->s = (unsigned char *)xrealloc(line->s, new_cap);
 		line->cap = new_cap;
 	}
 

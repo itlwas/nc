@@ -137,3 +137,15 @@ size_t rx_to_cursor_x(Line *line, size_t rx_target) {
 	}
 	return x;
 }
+void *xmalloc(size_t size) {
+	void *ptr = malloc(size);
+	if (!ptr)
+		die("malloc");
+	return ptr;
+}
+void *xrealloc(void *ptr, size_t size) {
+	void *new_ptr = realloc(ptr, size);
+	if (!new_ptr)
+		die("realloc");
+	return new_ptr;
+}
