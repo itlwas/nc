@@ -234,8 +234,7 @@ static void delete_empty_line(void) {
 	yoc.file.buffer.curr = yoc.file.buffer.curr->prev;
 	yoc.file.cursor.x = line_mblen(yoc.file.buffer.curr);
 	--yoc.file.cursor.y;
-	line_delete(yoc.file.buffer.curr->next);
-	yoc.file.buffer.num_lines--;
+	buffer_delete_line(&yoc.file.buffer, yoc.file.buffer.curr->next);
 }
 static void break_line_into_two(void) {
 	size_t at = mbnum_to_index(yoc.file.buffer.curr->s, yoc.file.cursor.x);
@@ -256,8 +255,7 @@ static void concatenate_with_previous_line(void) {
 		line
 	);
 	yoc.file.buffer.curr = yoc.file.buffer.curr->prev;
-	line_delete(yoc.file.buffer.curr->next);
-	yoc.file.buffer.num_lines--;
+	buffer_delete_line(&yoc.file.buffer, yoc.file.buffer.curr->next);
 	--yoc.file.cursor.y;
 	free(line);
 }

@@ -123,6 +123,7 @@ void writeln_console(const unsigned char *s, size_t len);
 size_t read_console(unsigned char **s, int *special_key);
 Line *line_insert(Line *prev, Line *next);
 void line_delete(Line *line);
+void buffer_delete_line(Buffer *buffer, Line *line);
 void line_insert_str(Line *line, size_t at, const unsigned char *str);
 void line_delete_str(Line *line, size_t at, size_t len);
 void line_insert_char(Line *line, size_t at, unsigned char c);

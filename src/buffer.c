@@ -96,3 +96,18 @@ size_t line_width(Line *line) {
 size_t line_mblen(Line *line) {
 	return index_to_mbnum(line->s, line->len);
 }
+void buffer_delete_line(Buffer *buffer, Line *line) {
+	if (!buffer || !line) return;
+	if (line->prev)
+		line->prev->next = line->next;
+	if (line->next)
+		line->next->prev = line->prev;
+	if (buffer->begin == line)
+		buffer->begin = line->next;
+	if (buffer->curr == line)
+		buffer->curr = line->next ? line->next : line->prev;
+	free(line->s);
+	free(line);
+	if (buffer->num_lines)
+		--buffer->num_lines;
+}
