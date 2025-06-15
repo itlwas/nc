@@ -23,17 +23,17 @@ void file_load(File *file) {
 
 	read = getline(&line, &len, f);
 	if (read != -1) {
-		for (size_t l = strlen(line); l > 0 && (line[l - 1] == '\n' || line[l - 1] == '\r'); --l)
-			line[l - 1] = '\0';
-		line_insert_str(file->buffer.curr, 0, (unsigned char*)line);
+		while (read > 0 && (line[read - 1] == '\n' || line[read - 1] == '\r'))
+			line[--read] = '\0';
+		line_insert_str(file->buffer.curr, 0, (unsigned char *)line);
 	}
 
 	while ((read = getline(&line, &len, f)) != -1) {
-		for (size_t l = strlen(line); l > 0 && (line[l - 1] == '\n' || line[l - 1] == '\r'); --l)
-			line[l - 1] = '\0';
+		while (read > 0 && (line[read - 1] == '\n' || line[read - 1] == '\r'))
+			line[--read] = '\0';
 		line_insert(file->buffer.curr, file->buffer.curr->next);
 		file->buffer.curr = file->buffer.curr->next;
-		line_insert_str(file->buffer.curr, 0, (unsigned char*)line);
+		line_insert_str(file->buffer.curr, 0, (unsigned char *)line);
 		file->buffer.num_lines++;
 	}
 

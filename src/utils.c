@@ -4,6 +4,7 @@
 #include <wctype.h>
 #include <wchar.h>
 #include <stdio.h>
+#include <string.h>
 #include "yoc.h"
 void die(const char *msg) {
 	switch_to_normal_buffer();
@@ -20,8 +21,12 @@ size_t utf8_len(unsigned char c) {
 	return 4;
 }
 bool is_alnum_mbchar(const unsigned char *s) {
+	mbstate_t state;
+	memset(&state, 0, sizeof(state));
 	wchar_t wc;
-	if (mbtowc(&wc, (char *)s, MAXCHARLEN) < 0) return 0;
+	size_t res = mbrtowc(&wc, (const char *)s, MAXCHARLEN, &state);
+	if (res == (size_t)-1 || res == (size_t)-2)
+		return false;
 	return iswalnum(wc);
 }
 size_t move_mbleft(const unsigned char *s, size_t pos) {
