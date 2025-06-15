@@ -353,6 +353,3 @@ bool is_file_exist(char *filename) {
 	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
 		!(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 }
-bool is_continuation_byte(unsigned char c) {
-	return (c & 0xC0) == 0x80;
-}

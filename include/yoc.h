@@ -110,6 +110,9 @@ static inline size_t utf8_len(unsigned char c) {
 	if ((c & 0x10u) == 0) return 3;
 	return 4;
 }
+static inline bool is_continuation_byte(unsigned char c) {
+	return (c & 0xC0u) == 0x80u;
+}
 bool is_alnum_mbchar(const unsigned char *s);
 size_t move_mbleft(const unsigned char *s, size_t pos);
 size_t move_mbright(const unsigned char *s, size_t pos);
@@ -177,7 +180,6 @@ void do_quit(void);
 void fix_cursor_x(void);
 size_t get_tabsize(void);
 bool is_file_exist(char *filename);
-bool is_continuation_byte(unsigned char c);
 size_t find_first_nonblank(const unsigned char *s);
 size_t cursor_x_to_rx(Line *line, size_t x);
 size_t str_width(const unsigned char *s, size_t len);

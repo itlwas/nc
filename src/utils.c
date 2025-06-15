@@ -53,15 +53,9 @@ void fix_cursor_x(void) {
 	size_t len = line_mblen(yoc.file.buffer.curr);
 	if (yoc.file.cursor.x > len) yoc.file.cursor.x = len;
 }
-#ifdef _WIN32
 size_t get_tabsize(void) {
 	return 4;
 }
-#else
-size_t get_tabsize(void) {
-	return 4;
-}
-#endif
 size_t cursor_x_to_rx(Line *line, size_t x) {
 	size_t rx = 0;
 	size_t pos = mbnum_to_index(line->s, x);
