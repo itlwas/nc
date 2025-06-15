@@ -27,7 +27,12 @@ size_t move_mbleft(const unsigned char *s, size_t pos) {
 	return pos;
 }
 size_t move_mbright(const unsigned char *s, size_t pos) {
-	while (s[++pos] && is_continuation_byte(s[pos]));
+	if (s[pos] == '\0')
+		return pos;
+	++pos;
+	while (s[pos] != '\0' && is_continuation_byte(s[pos])) {
+		++pos;
+	}
 	return pos;
 }
 size_t index_to_mbnum(const unsigned char *s, size_t n) {
@@ -98,7 +103,9 @@ size_t width_to_length(const unsigned char *s, size_t width) {
 }
 size_t find_first_nonblank(const unsigned char *s) {
 	size_t i = 0;
-	while (isspace(s[i]) && s[i++] != 0);
+	while (s[i] != '\0' && isspace((unsigned char)s[i])) {
+		++i;
+	}
 	return i;
 }
 size_t rx_to_cursor_x(Line *line, size_t rx_target) {

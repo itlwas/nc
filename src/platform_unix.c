@@ -197,15 +197,15 @@ void disable_raw_mode(void) {
 		die("tcsetattr");
 }
 void enable_raw_mode(void) {
-	struct termios raw = orig_termios;
-	atexit(disable_raw_mode);
 	if (tcgetattr(STDIN_FILENO, &orig_termios) == -1)
 		die("tcgetattr");
+	struct termios raw = orig_termios;
+	atexit(disable_raw_mode);
 	raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
 	raw.c_oflag &= ~(OPOST);
 	raw.c_cflag |= (CS8);
 	raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
-	raw.c_cc[VMIN] = 0;
+	raw.c_cc[VMIN]  = 0;
 	raw.c_cc[VTIME] = 1;
 	if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1)
 		die("tcsetattr");
