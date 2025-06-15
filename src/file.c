@@ -4,7 +4,7 @@
 #include <stdio.h>
 void file_init(File *file) {
 	status_init();
-	file->path = (char *)malloc(64);
+	file->path = (char *)xmalloc(64);
 	file->path[0] = '\0';
 	file->cap = 64;
 	file->cursor.x = 0;

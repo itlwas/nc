@@ -103,7 +103,13 @@ enum key {
 };
 void buffer_init(Buffer *buffer);
 void buffer_free(Buffer *buffer);
-size_t utf8_len(unsigned char c);
+static inline size_t utf8_len(unsigned char c) {
+	if ((c & 0x80u) == 0) return 1;
+	if ((c & 0x40u) == 0) return UTF8_CONTINUATION_BYTE;
+	if ((c & 0x20u) == 0) return 2;
+	if ((c & 0x10u) == 0) return 3;
+	return 4;
+}
 bool is_alnum_mbchar(const unsigned char *s);
 size_t move_mbleft(const unsigned char *s, size_t pos);
 size_t move_mbright(const unsigned char *s, size_t pos);

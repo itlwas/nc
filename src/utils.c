@@ -13,13 +13,6 @@ void die(const char *msg) {
 	printf("\r");
 	exit(EXIT_FAILURE);
 }
-size_t utf8_len(unsigned char c) {
-	if ((c & (1 << 7)) == 0) return 1;
-	if ((c & (1 << 6)) == 0) return UTF8_CONTINUATION_BYTE;
-	if ((c & (1 << 5)) == 0) return 2;
-	if ((c & (1 << 4)) == 0) return 3;
-	return 4;
-}
 bool is_alnum_mbchar(const unsigned char *s) {
 	mbstate_t state;
 	memset(&state, 0, sizeof(state));

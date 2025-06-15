@@ -22,7 +22,7 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 	if (c == EOF)
 		return -1;
 	if (*lineptr == NULL && *n == 0) {
-		*lineptr = malloc(128);
+		*lineptr = xmalloc(128);
 		if (*lineptr == NULL)
 			return -1;
 		*n = 128;
@@ -32,7 +32,7 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 			size_t new_size = *n + (*n >> 2);
 			if (new_size < 128)
 				new_size = 128;
-			char *new_ptr = realloc(*lineptr, new_size);
+			char *new_ptr = xrealloc(*lineptr, new_size);
 			if (new_ptr == NULL)
 				return -1;
 			*n = new_size;
@@ -59,7 +59,7 @@ void write_console(const unsigned char *s, size_t len) {
 	int required = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s, (int)len, NULL, 0);
 	if (required <= 0)
 		die("MultiByteToWideChar");
-	wchar_t *wbuf = (wchar_t *)malloc((size_t)required * sizeof(wchar_t));
+	wchar_t *wbuf = (wchar_t *)xmalloc((size_t)required * sizeof(wchar_t));
 	if (!wbuf)
 		die("malloc");
 	if (MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s, (int)len, wbuf, required) != required) {
@@ -77,7 +77,7 @@ void writeln_console(const unsigned char *s, size_t len) {
 size_t read_console(unsigned char **s, int *special_key) {
 	wchar_t c = get_char(special_key);
 	if (c == '\0') {
-		*s = (unsigned char *)malloc(1);
+		*s = (unsigned char *)xmalloc(1);
 		if (!*s)
 			die("malloc");
 		(*s)[0] = '\0';
@@ -87,7 +87,7 @@ size_t read_console(unsigned char **s, int *special_key) {
 	size_t size = WideCharToMultiByte(CP_UTF8, 0, &c, 1, buff, sizeof(buff), NULL, NULL);
 	if (size == 0)
 		die("WideCharToMultiByte");
-	*s = (unsigned char *)malloc(size + 1);
+	*s = (unsigned char *)xmalloc(size + 1);
 	if (!*s)
 		die("malloc");
 	for (size_t i = 0; i < size; ++i)
