@@ -22,6 +22,7 @@ static char *rowbuf = NULL;
 static size_t rowbuf_cap = 0;
 static char *spaces = NULL;
 static size_t spaces_cap = 0;
+static size_t lineno_pad = 0;
 void status_init(void) {
 	if (!(yoc.file.status.msg = (char *)malloc(BUFF_SIZE))) die("malloc");
 	yoc.file.status.msg[0] = '\0';
@@ -213,6 +214,9 @@ void refresh_screen(void) {
 	get_window_size(&cols, &rows);
 	yoc.cols = cols;
 	yoc.rows = SCREEN_ROWS(rows);
+	size_t digits = 1;
+	for (size_t n = yoc.file.buffer.num_lines; n >= 10; n /= 10) ++digits;
+	lineno_pad = digits + 2;
 	ensure_screen_buffer();
 	if (yoc.window.y > yoc.file.cursor.y)
 		yoc.window.y = yoc.file.cursor.y;
@@ -221,7 +225,7 @@ void refresh_screen(void) {
 	scroll_buffer();
 	display_buffer();
 	display_status_line();
-	set_cursor_position(yoc.file.cursor.rx - yoc.window.x, yoc.file.cursor.y - yoc.window.y);
+	set_cursor_position(lineno_pad + yoc.file.cursor.rx - yoc.window.x, yoc.file.cursor.y - yoc.window.y);
 	show_cursor();
 }
 void scroll_buffer(void) {
@@ -234,8 +238,9 @@ void scroll_buffer(void) {
 		yoc.window.y = yoc.file.cursor.y - yoc.rows + 1;
 	if (yoc.file.cursor.rx < yoc.window.x)
 		yoc.window.x = yoc.file.cursor.rx;
-	if (yoc.file.cursor.rx >= yoc.window.x + yoc.cols)
-		yoc.window.x = yoc.file.cursor.rx - yoc.cols + 1;
+	size_t text_cols = yoc.cols - lineno_pad;
+	if (yoc.file.cursor.rx >= yoc.window.x + text_cols)
+		yoc.window.x = yoc.file.cursor.rx - text_cols + 1;
 	Line *line = yoc.file.buffer.curr;
 	size_t tmp_row = yoc.file.cursor.y;
 	while (tmp_row > yoc.window.y) {
@@ -255,17 +260,22 @@ static void display_buffer(void) {
 }
 static void display_rows(void) {
 	Line *line = yoc.top_line;
-	if (!rowbuf) {
-		ensure_screen_buffer();
-	}
+	if (!rowbuf) ensure_screen_buffer();
+	size_t digits = lineno_pad ? lineno_pad - 2 : 1;
 	for (size_t y = 0; y < yoc.rows; ++y) {
+		rowbuf[0] = '\0';
+		if (line) {
+			size_t lnum = yoc.window.y + y + 1;
+			snprintf(rowbuf, lineno_pad + 1, " %*zu ", (int)digits, lnum);
+		}
+		size_t pos = strlen(rowbuf);
 		if (!line) {
-			rowbuf[0] = '\0';
+			rowbuf[0] = '~';
+			rowbuf[1] = '\0';
 			if (yoc.file.buffer.num_lines == 1 && yoc.file.buffer.begin->len == 0 && y == yoc.rows / 3) {
 				char msg[32];
 				int welcomelen = snprintf(msg, sizeof(msg), "yoc editor -- version %s", "0.0.1");
-				if ((size_t)welcomelen > yoc.cols)
-					welcomelen = (int)yoc.cols;
+				if ((size_t)welcomelen > yoc.cols) welcomelen = (int)yoc.cols;
 				size_t padding = (yoc.cols - (size_t)welcomelen) / 2;
 				size_t pos = 0;
 				if (padding) {
@@ -273,27 +283,22 @@ static void display_rows(void) {
 					--padding;
 				}
 				while (padding-- && pos < yoc.cols) rowbuf[pos++] = ' ';
-				if (pos + (size_t)welcomelen > yoc.cols)
-					welcomelen = (int)(yoc.cols - pos);
+				if (pos + (size_t)welcomelen > yoc.cols) welcomelen = (int)(yoc.cols - pos);
 				memcpy(rowbuf + pos, msg, (size_t)welcomelen);
 				pos += (size_t)welcomelen;
 				rowbuf[pos] = '\0';
-			} else {
-				rowbuf[0] = '~';
-				rowbuf[1] = '\0';
 			}
 		} else {
 			const unsigned char *s = line->s;
-			size_t i = 0, width = 0, pos = 0;
-			while (i < line->len && width < yoc.window.x + yoc.cols) {
+			size_t i = 0, width = 0;
+			size_t text_cols = yoc.cols - lineno_pad;
+			while (i < line->len && width < yoc.window.x + text_cols) {
 				unsigned char c = s[i];
 				size_t char_len = 1;
 				if (c == '\t') {
 					size_t spaces_to_add = yoc.tabsize - (width % yoc.tabsize);
 					for (size_t k = 0; k < spaces_to_add; ++k) {
-						if (width >= yoc.window.x && pos < yoc.cols * MAXCHARLEN) {
-							rowbuf[pos++] = ' ';
-						}
+						if (width >= yoc.window.x && pos < yoc.cols * MAXCHARLEN) rowbuf[pos++] = ' ';
 						++width;
 					}
 					i += 1;
@@ -301,8 +306,7 @@ static void display_rows(void) {
 				}
 				if (!is_continuation_byte(c)) {
 					char_len = utf8_len(c);
-					if (char_len == UTF8_CONTINUATION_BYTE || i + char_len > line->len)
-						char_len = 1;
+					if (char_len == UTF8_CONTINUATION_BYTE || i + char_len > line->len) char_len = 1;
 					if (width >= yoc.window.x && pos + char_len <= yoc.cols * MAXCHARLEN) {
 						memcpy(rowbuf + pos, s + i, char_len);
 						pos += char_len;
