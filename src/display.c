@@ -23,6 +23,7 @@ static size_t rowbuf_cap = 0;
 static char *spaces = NULL;
 static size_t spaces_cap = 0;
 static size_t lineno_pad = 0;
+bool show_line_numbers = true;
 void status_init(void) {
 	if (!(yoc.file.status.msg = (char *)malloc(BUFF_SIZE))) die("malloc");
 	yoc.file.status.msg[0] = '\0';
@@ -216,7 +217,7 @@ void refresh_screen(void) {
 	yoc.rows = SCREEN_ROWS(rows);
 	size_t digits = 1;
 	for (size_t n = yoc.file.buffer.num_lines; n >= 10; n /= 10) ++digits;
-	lineno_pad = digits + 2;
+	lineno_pad = show_line_numbers ? digits + 2 : 0;
 	ensure_screen_buffer();
 	if (yoc.window.y > yoc.file.cursor.y)
 		yoc.window.y = yoc.file.cursor.y;
@@ -225,7 +226,7 @@ void refresh_screen(void) {
 	scroll_buffer();
 	display_buffer();
 	display_status_line();
-	set_cursor_position(lineno_pad + yoc.file.cursor.rx - yoc.window.x, yoc.file.cursor.y - yoc.window.y);
+	set_cursor_position((show_line_numbers ? lineno_pad : 0) + yoc.file.cursor.rx - yoc.window.x, yoc.file.cursor.y - yoc.window.y);
 	show_cursor();
 }
 void scroll_buffer(void) {
@@ -238,7 +239,7 @@ void scroll_buffer(void) {
 		yoc.window.y = yoc.file.cursor.y - yoc.rows + 1;
 	if (yoc.file.cursor.rx < yoc.window.x)
 		yoc.window.x = yoc.file.cursor.rx;
-	size_t text_cols = yoc.cols - lineno_pad;
+	size_t text_cols = yoc.cols - (show_line_numbers ? lineno_pad : 0);
 	if (yoc.file.cursor.rx >= yoc.window.x + text_cols)
 		yoc.window.x = yoc.file.cursor.rx - text_cols + 1;
 	Line *line = yoc.file.buffer.curr;
@@ -264,7 +265,7 @@ static void display_rows(void) {
 	size_t digits = lineno_pad ? lineno_pad - 2 : 1;
 	for (size_t y = 0; y < yoc.rows; ++y) {
 		rowbuf[0] = '\0';
-		if (line) {
+		if (line && show_line_numbers) {
 			size_t lnum = yoc.window.y + y + 1;
 			snprintf(rowbuf, lineno_pad + 1, " %*zu ", (int)digits, lnum);
 		}
@@ -291,7 +292,7 @@ static void display_rows(void) {
 		} else {
 			const unsigned char *s = line->s;
 			size_t i = 0, width = 0;
-			size_t text_cols = yoc.cols - lineno_pad;
+			size_t text_cols = yoc.cols - (show_line_numbers ? lineno_pad : 0);
 			while (i < line->len && width < yoc.window.x + text_cols) {
 				unsigned char c = s[i];
 				size_t char_len = 1;

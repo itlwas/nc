@@ -320,6 +320,9 @@ void process_keypress(void) {
 		case CTRL_KEY('q'):
 			do_quit();
 			break;
+		case CTRL_KEY('r'):
+			show_line_numbers = !show_line_numbers;
+			break;
 		}
 	}
 	free(s);

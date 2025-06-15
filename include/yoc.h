@@ -89,6 +89,7 @@ struct yoc_t {
 	size_t screen_cols;
 };
 extern struct yoc_t yoc;
+extern bool show_line_numbers;
 #define UTF8_CONTINUATION_BYTE 0
 #define MAXCHARLEN 6
 #define F_KEY(x) ((x) + 0x6f)
