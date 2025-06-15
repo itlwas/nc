@@ -1,0 +1,16 @@
+# Build artifacts
+yoc
+yoc.exe
+
+# Object files
+obj/
+*.o
+*.d
+
+# Editor/IDE
+.vscode/
+*.swp
+*~
+
+# System
+.DS_Store

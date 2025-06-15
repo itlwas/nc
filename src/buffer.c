@@ -1,0 +1,106 @@
+#include <stdlib.h>
+#include "yoc.h"
+void buffer_init(Buffer *buffer) {
+	buffer->begin = buffer->curr = line_insert(NULL, NULL);
+	buffer->num_lines = 1;
+}
+void buffer_free(Buffer *buffer) {
+	while (buffer->begin) {
+		Line *temp = buffer->begin;
+		buffer->begin = buffer->begin->next;
+		line_delete(temp);
+	}
+}
+Line *line_insert(Line *prev, Line *next) {
+	Line *line = (Line *)malloc(sizeof(Line));
+	if (!line)
+		die("malloc");
+	line->s = (unsigned char *)malloc(BUFF_SIZE);
+	if (!line->s) {
+		free(line);
+		die("malloc");
+	}
+	line->s[0] = '\0';
+	line->len = 0;
+	line->cap = BUFF_SIZE;
+	line->width = 0;
+	line->prev = prev;
+	line->next = next;
+	if (prev)
+		prev->next = line;
+	if (next)
+		next->prev = line;
+	return line;
+}
+void line_delete(Line *line) {
+	if (line->prev && line->next) {
+		line->prev->next = line->next;
+		line->next->prev = line->prev;
+	} else if (line->prev) {
+		line->prev->next = NULL;
+	} else if (line->next) {
+		line->next->prev = NULL;
+	}
+	free(line->s);
+	free(line);
+}
+void line_insert_str(Line *line, size_t at, const unsigned char *str) {
+	size_t str_len = strlen((char *)str);
+	if (str_len == 0) return;
+
+	size_t new_len = line->len + str_len;
+	if (new_len + 1 > line->cap) {
+		size_t new_cap = line->cap;
+		while (new_len + 1 > new_cap)
+			new_cap = new_cap == 0 ? BUFF_SIZE : new_cap * 2;
+		line->s = (unsigned char *)realloc(line->s, new_cap);
+		if (!line->s)
+			die("realloc");
+		line->cap = new_cap;
+	}
+
+	if (at > line->len)
+		at = line->len;
+	if (at < line->len)
+		memmove(line->s + at + str_len, line->s + at, line->len - at);
+	memcpy(line->s + at, str, str_len);
+	line->len = new_len;
+	line->s[line->len] = '\0';
+	line->width = LINE_WIDTH_UNCACHED;
+}
+void line_delete_str(Line *line, size_t at, size_t len) {
+	if (line->len == 0)
+		return;
+	if (at >= line->len)
+		at = line->len - 1;
+	if (at + len >= line->len)
+		len = line->len - at;
+	memmove(line->s + at, line->s + at + len, (line->len - at - len) + 1);
+	line->len -= len;
+	line->width = LINE_WIDTH_UNCACHED;
+}
+void line_insert_char(Line *line, size_t at, unsigned char c) {
+	unsigned char s[2];
+	s[0] = c;
+	s[1] = '\0';
+	line_insert_str(line, at, s);
+}
+void line_delete_char(Line *line, size_t at) {
+	line_delete_str(line, at, 1);
+}
+void line_free(Line *line) {
+	while (line) {
+		Line *temp = line;
+		line = line->next;
+		free(temp->s);
+		free(temp);
+	}
+}
+size_t line_width(Line *line) {
+	if (line->width == LINE_WIDTH_UNCACHED)
+		line->width = length_to_width(line->s, line->len);
+	return line->width;
+}
+size_t line_mblen(Line *line) {
+	return index_to_mbnum(line->s, line->len);
+}
