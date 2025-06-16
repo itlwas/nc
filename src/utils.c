@@ -15,6 +15,7 @@ void die(const char *msg) {
 	perror(msg);
 	fflush(stderr);
 	printf("\r");
+	display_free();
 	exit(EXIT_FAILURE);
 }
 bool is_alnum_mbchar(const unsigned char *s) {

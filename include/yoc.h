@@ -198,4 +198,5 @@ size_t char_display_width(const unsigned char *s);
 #define YOC_LIKELY(x)   (x)
 #define YOC_UNLIKELY(x) (x)
 #endif
+void display_free(void);
 #endif

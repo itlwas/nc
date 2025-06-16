@@ -393,3 +393,23 @@ static void draw_line_if_changed(size_t row, const unsigned char *line, size_t l
 	memcpy(prev, line, len);
 	prev[len] = '\0';
 }
+void display_free(void) {
+	if (rowbuf) {
+		free(rowbuf);
+		rowbuf = NULL;
+		rowbuf_cap = 0;
+	}
+	if (spaces) {
+		free(spaces);
+		spaces = NULL;
+		spaces_cap = 0;
+	}
+	if (yoc.screen_lines) {
+		for (size_t r = 0; r < yoc.screen_rows; ++r)
+			free(yoc.screen_lines[r]);
+		free(yoc.screen_lines);
+		yoc.screen_lines = NULL;
+		yoc.screen_rows = 0;
+		yoc.screen_cols = 0;
+	}
+}

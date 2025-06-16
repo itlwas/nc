@@ -67,5 +67,6 @@ void file_save(File *file) {
 void file_free(File *file) {
 	buffer_free(&file->buffer);
 	free(file->path);
+	display_free();
 	status_free();
 }
