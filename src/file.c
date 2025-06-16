@@ -2,6 +2,17 @@
 #include "yoc.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
+static void ensure_trailing_empty_line(File *file) {
+	if (!file) return;
+	Line *line = file->buffer.begin;
+	if (!line) return;
+	while (line->next) line = line->next;
+	if (line->len != 0) {
+		line_insert(line, NULL);
+		file->buffer.num_lines++;
+	}
+}
 void file_init(File *file) {
 	status_init();
 	file->path = (char *)xmalloc(64);
@@ -18,16 +29,13 @@ void file_load(File *file) {
 	size_t len = 0;
 	ssize_t read;
 	FILE *f = fopen(file->path, "r");
-	if (!f)
-		die("fopen");
-
+	if (!f) die("fopen");
 	read = getline(&line, &len, f);
 	if (read != -1) {
 		while (read > 0 && (line[read - 1] == '\n' || line[read - 1] == '\r'))
 			line[--read] = '\0';
 		line_insert_str(file->buffer.curr, 0, (unsigned char *)line);
 	}
-
 	while ((read = getline(&line, &len, f)) != -1) {
 		while (read > 0 && (line[read - 1] == '\n' || line[read - 1] == '\r'))
 			line[--read] = '\0';
@@ -36,15 +44,14 @@ void file_load(File *file) {
 		line_insert_str(file->buffer.curr, 0, (unsigned char *)line);
 		file->buffer.num_lines++;
 	}
-
 	file->buffer.curr = file->buffer.begin;
 	free(line);
 	fclose(f);
 }
 void file_save(File *file) {
+	ensure_trailing_empty_line(file);
 	FILE *f = fopen(file->path, "w");
-	if (!f)
-		die("fopen");
+	if (!f) die("fopen");
 	Line *line = file->buffer.begin;
 	for (; line && line->next; line = line->next) {
 		fputs((char *)line->s, f);
