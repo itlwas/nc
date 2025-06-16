@@ -76,24 +76,18 @@ void writeln_console(const unsigned char *s, size_t len) {
 }
 size_t read_console(unsigned char **s, int *special_key) {
 	wchar_t c = get_char(special_key);
+	static unsigned char buf[MAXCHARLEN + 1];
 	if (c == '\0') {
-		*s = (unsigned char *)xmalloc(1);
-		if (!*s)
-			die("malloc");
-		(*s)[0] = '\0';
+		buf[0] = '\0';
+		*s = buf;
 		return 0;
 	}
-	char buff[6] = { '\0' };
-	size_t size = WideCharToMultiByte(CP_UTF8, 0, &c, 1, buff, sizeof(buff), NULL, NULL);
-	if (size == 0)
+	int size = WideCharToMultiByte(CP_UTF8, 0, &c, 1, (LPSTR)buf, MAXCHARLEN, NULL, NULL);
+	if (size <= 0)
 		die("WideCharToMultiByte");
-	*s = (unsigned char *)xmalloc(size + 1);
-	if (!*s)
-		die("malloc");
-	for (size_t i = 0; i < size; ++i)
-		(*s)[i] = buff[i];
-	(*s)[size] = '\0';
-	return size;
+	buf[size] = '\0';
+	*s = buf;
+	return (size_t)size;
 }
 static wchar_t get_char(int *special_key) {
 	INPUT_RECORD input;

@@ -323,7 +323,6 @@ void process_keypress(void) {
 			break;
 		}
 	}
-	free(s);
 	scroll_buffer();
 	maybe_reset_modified();
 }

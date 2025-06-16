@@ -24,15 +24,14 @@ size_t read_console(unsigned char **s, int *special_key) {
 	unsigned char input;
 	while (get_char(&input) != 1);
 	size_t len = utf8_len(input);
-	*s = (unsigned char *)malloc(len + 1);
-	if (!*s)
-		die("realloc");
-	(*s)[0] = input;
+	static unsigned char buf[MAXCHARLEN + 1];
+	buf[0] = input;
 	size_t size = 1;
 	for (size_t i = 1; i < len && get_char(&input) == 1; ++i, ++size)
-		(*s)[i] = input;
-	(*s)[size] = '\0';
-	*special_key = parse_input(*s);
+		buf[i] = input;
+	buf[size] = '\0';
+	*s = buf;
+	*special_key = parse_input(buf);
 	return *special_key ? 0 : size;
 }
 static int get_char(void *c) {

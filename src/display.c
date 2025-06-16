@@ -90,7 +90,6 @@ static bool status_process_input(void) {
 			switch (special_key) {
 				case ESC:
 				case ENTER:
-					free(s);
 					status_input_free();
 					status_mode = NORMAL;
 					return (special_key == ESC) ? false : true;
@@ -111,7 +110,6 @@ static bool status_process_input(void) {
 					break;
 			}
 		}
-		free(s);
 	}
 }
 static void status_input_print(void) {
