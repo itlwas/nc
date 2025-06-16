@@ -38,44 +38,49 @@ void line_delete(Line *line) {
 	free(line->s);
 	free(line);
 }
+static inline void line_reserve(Line *line, size_t additional) {
+	size_t required = line->len + additional + 1;
+	if (required <= line->cap)
+		return;
+	size_t new_cap = line->cap ? line->cap : BUFF_SIZE;
+	while (new_cap < required)
+		new_cap <<= 1;
+	line->s = (unsigned char *)xrealloc(line->s, new_cap);
+	line->cap = new_cap;
+}
 void line_insert_str(Line *line, size_t at, const unsigned char *str) {
-	size_t str_len = strlen((char *)str);
-	if (str_len == 0) return;
-
-	size_t new_len = line->len + str_len;
-	if (new_len + 1 > line->cap) {
-		size_t new_cap = line->cap;
-		while (new_len + 1 > new_cap)
-			new_cap = new_cap == 0 ? BUFF_SIZE : new_cap * 2;
-		line->s = (unsigned char *)xrealloc(line->s, new_cap);
-		line->cap = new_cap;
-	}
-
+	size_t str_len = strlen((const char *)str);
+	if (str_len == 0)
+		return;
 	if (at > line->len)
 		at = line->len;
+	line_reserve(line, str_len);
 	if (at < line->len)
-		memmove(line->s + at + str_len, line->s + at, line->len - at);
+		memmove(line->s + at + str_len, line->s + at, line->len - at + 1);
 	memcpy(line->s + at, str, str_len);
-	line->len = new_len;
+	line->len += str_len;
 	line->s[line->len] = '\0';
 	line->width = LINE_WIDTH_UNCACHED;
 }
 void line_delete_str(Line *line, size_t at, size_t len) {
-	if (line->len == 0)
+	if (len == 0 || at >= line->len)
 		return;
-	if (at >= line->len)
-		at = line->len - 1;
-	if (at + len >= line->len)
+	if (at + len > line->len)
 		len = line->len - at;
-	memmove(line->s + at, line->s + at + len, (line->len - at - len) + 1);
+	memmove(line->s + at, line->s + at + len, line->len - at - len + 1);
 	line->len -= len;
 	line->width = LINE_WIDTH_UNCACHED;
 }
 void line_insert_char(Line *line, size_t at, unsigned char c) {
-	unsigned char s[2];
-	s[0] = c;
-	s[1] = '\0';
-	line_insert_str(line, at, s);
+	if (at > line->len)
+		at = line->len;
+	line_reserve(line, 1);
+	if (at < line->len)
+		memmove(line->s + at + 1, line->s + at, line->len - at + 1);
+	line->s[at] = c;
+	++line->len;
+	line->s[line->len] = '\0';
+	line->width = LINE_WIDTH_UNCACHED;
 }
 void line_delete_char(Line *line, size_t at) {
 	line_delete_str(line, at, 1);
