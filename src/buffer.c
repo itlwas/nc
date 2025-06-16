@@ -17,7 +17,7 @@ Line *line_insert(Line *prev, Line *next) {
 	line->s[0] = '\0';
 	line->len = 0;
 	line->cap = BUFF_SIZE;
-	line->width = 0;
+	line->width = LINE_WIDTH_UNCACHED;
 	line->prev = prev;
 	line->next = next;
 	if (prev)
