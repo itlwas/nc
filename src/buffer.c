@@ -41,7 +41,12 @@ static inline void line_reserve(Line *line, size_t additional) {
 	if (required <= line->cap) return;
 	size_t new_cap = line->cap;
 	if (new_cap == 0) new_cap = 1;
-	while (new_cap < required) new_cap <<= 1;
+	while (new_cap < required && new_cap <= SIZE_MAX / 2) {
+		new_cap <<= 1;
+	}
+	if (new_cap < required) {
+		new_cap = required;
+	}
 	line->s = (unsigned char *)xrealloc(line->s, new_cap);
 	line->cap = new_cap;
 }
