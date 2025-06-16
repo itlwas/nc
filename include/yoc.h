@@ -191,4 +191,11 @@ void *xrealloc(void *ptr, size_t size);
 #define VSCROLL_MARGIN 3
 #define HSCROLL_MARGIN 5
 size_t char_display_width(const unsigned char *s);
+#if defined(__GNUC__) || defined(__clang__)
+#define YOC_LIKELY(x)   __builtin_expect(!!(x), 1)
+#define YOC_UNLIKELY(x) __builtin_expect(!!(x), 0)
+#else
+#define YOC_LIKELY(x)   (x)
+#define YOC_UNLIKELY(x) (x)
+#endif
 #endif

@@ -9,7 +9,7 @@
 #if defined(_WIN32) && !defined(YOCP_NO_WCWIDTH)
 #define YOCP_NO_WCWIDTH
 #endif
-static size_t char_display_width_impl(const unsigned char *s, size_t *char_len_out);
+static size_t char_display_width_impl(const unsigned char *restrict s, size_t *restrict char_len_out);
 void die(const char *msg) {
 	switch_to_normal_buffer();
 	perror(msg);
@@ -175,8 +175,8 @@ void *xrealloc(void *ptr, size_t size) {
 		die("realloc");
 	return new_ptr;
 }
-static size_t char_display_width_impl(const unsigned char *s, size_t *char_len_out) {
-	if ((*s & 0x80u) == 0) {
+static size_t char_display_width_impl(const unsigned char *restrict s, size_t *restrict char_len_out) {
+	if (YOC_LIKELY((*s & 0x80u) == 0)) {
 		if (char_len_out)
 			*char_len_out = 1;
 		return 1;

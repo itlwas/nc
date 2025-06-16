@@ -39,13 +39,22 @@ void line_delete(Line *line) {
 static inline void line_reserve(Line *line, size_t additional) {
 	size_t required = line->len + additional + 1;
 	if (required <= line->cap) return;
-	size_t new_cap = line->cap;
-	if (new_cap == 0) new_cap = 1;
-	while (new_cap < required && new_cap <= SIZE_MAX / 2) {
-		new_cap <<= 1;
-	}
-	if (new_cap < required) {
-		new_cap = required;
+	size_t new_cap = (line->cap == 0) ? 1 : line->cap;
+	while (new_cap < required) {
+		if (new_cap < 1024) {
+			new_cap <<= 1;
+		} else {
+			size_t delta = new_cap >> 1;
+			if (delta == 0) {
+				new_cap = required;
+				break;
+			}
+			new_cap += delta;
+		}
+		if (new_cap > SIZE_MAX / 2) {
+			new_cap = required;
+			break;
+		}
 	}
 	line->s = (unsigned char *)xrealloc(line->s, new_cap);
 	line->cap = new_cap;
