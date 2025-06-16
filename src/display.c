@@ -233,15 +233,17 @@ void scroll_buffer(void) {
 	yoc.file.cursor.rx = 0;
 	if (yoc.file.cursor.y < yoc.file.buffer.num_lines)
 		yoc.file.cursor.rx = cursor_x_to_rx(yoc.file.buffer.curr, yoc.file.cursor.x);
-	if (yoc.file.cursor.y < yoc.window.y)
-		yoc.window.y = yoc.file.cursor.y;
-	if (yoc.file.cursor.y >= yoc.window.y + yoc.rows)
-		yoc.window.y = yoc.file.cursor.y - yoc.rows + 1;
-	if (yoc.file.cursor.rx < yoc.window.x)
-		yoc.window.x = yoc.file.cursor.rx;
+	if (yoc.file.cursor.y < yoc.window.y + VSCROLL_MARGIN) {
+		yoc.window.y = (yoc.file.cursor.y < VSCROLL_MARGIN) ? 0 : yoc.file.cursor.y - VSCROLL_MARGIN;
+	} else if (yoc.file.cursor.y >= yoc.window.y + yoc.rows - VSCROLL_MARGIN) {
+		yoc.window.y = yoc.file.cursor.y - yoc.rows + VSCROLL_MARGIN + 1;
+	}
 	size_t text_cols = yoc.cols - (show_line_numbers ? lineno_pad : 0);
-	if (yoc.file.cursor.rx >= yoc.window.x + text_cols)
-		yoc.window.x = yoc.file.cursor.rx - text_cols + 1;
+	if (yoc.file.cursor.rx < yoc.window.x + HSCROLL_MARGIN) {
+		yoc.window.x = (yoc.file.cursor.rx < HSCROLL_MARGIN) ? 0 : yoc.file.cursor.rx - HSCROLL_MARGIN;
+	} else if (yoc.file.cursor.rx >= yoc.window.x + text_cols - HSCROLL_MARGIN) {
+		yoc.window.x = yoc.file.cursor.rx - text_cols + HSCROLL_MARGIN + 1;
+	}
 	Line *line = yoc.file.buffer.curr;
 	size_t tmp_row = yoc.file.cursor.y;
 	while (tmp_row > yoc.window.y) {
