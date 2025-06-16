@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "yoc.h"
+#if defined(_WIN32) && !defined(YOCP_NO_WCWIDTH)
+#define YOCP_NO_WCWIDTH
+#endif
 static size_t char_display_width_impl(const unsigned char *s, size_t *char_len_out);
 void die(const char *msg) {
 	switch_to_normal_buffer();
@@ -15,6 +18,8 @@ void die(const char *msg) {
 	exit(EXIT_FAILURE);
 }
 bool is_alnum_mbchar(const unsigned char *s) {
+	if ((*s & 0x80u) == 0)
+		return isalnum((unsigned char)*s);
 	mbstate_t state;
 	memset(&state, 0, sizeof(state));
 	wchar_t wc;
@@ -171,6 +176,11 @@ void *xrealloc(void *ptr, size_t size) {
 	return new_ptr;
 }
 static size_t char_display_width_impl(const unsigned char *s, size_t *char_len_out) {
+	if ((*s & 0x80u) == 0) {
+		if (char_len_out)
+			*char_len_out = 1;
+		return 1;
+	}
 	size_t clen = utf8_len(*s);
 	if (clen == UTF8_CONTINUATION_BYTE || clen == 0 || clen > MAXCHARLEN)
 		clen = 1;
