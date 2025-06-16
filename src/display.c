@@ -310,11 +310,14 @@ static void display_rows(void) {
 				if (!is_continuation_byte(c)) {
 					char_len = utf8_len(c);
 					if (char_len == UTF8_CONTINUATION_BYTE || i + char_len > line->len) char_len = 1;
+					size_t char_width = char_display_width(s + i);
+					if (width + char_width > yoc.window.x + text_cols)
+						break;
 					if (width >= yoc.window.x && pos + char_len <= yoc.cols * MAXCHARLEN) {
 						memcpy(rowbuf + pos, s + i, char_len);
 						pos += char_len;
 					}
-					width += 1;
+					width += char_width;
 				}
 				i += char_len;
 			}

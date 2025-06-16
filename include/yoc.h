@@ -190,4 +190,5 @@ void *xmalloc(size_t size);
 void *xrealloc(void *ptr, size_t size);
 #define VSCROLL_MARGIN 3
 #define HSCROLL_MARGIN 5
+size_t char_display_width(const unsigned char *s);
 #endif
