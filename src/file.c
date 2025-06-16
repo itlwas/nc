@@ -45,9 +45,15 @@ void file_save(File *file) {
 	FILE *f = fopen(file->path, "w");
 	if (!f)
 		die("fopen");
-	for (Line *line = file->buffer.begin; line; line = line->next) {
+	Line *line = file->buffer.begin;
+	for (; line && line->next; line = line->next) {
 		fputs((char *)line->s, f);
 		fputs("\n", f);
+	}
+	if (line) {
+		fputs((char *)line->s, f);
+		if (line->len != 0)
+			fputs("\n", f);
 	}
 	fclose(f);
 }
