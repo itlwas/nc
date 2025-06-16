@@ -176,7 +176,7 @@ static size_t char_display_width_impl(const unsigned char *s, size_t *char_len_o
 		clen = 1;
 	if (char_len_out)
 		*char_len_out = clen;
-#ifdef __STDC_ISO_10646__
+#ifndef YOCP_NO_WCWIDTH
 	mbstate_t st = {0};
 	wchar_t wc;
 	size_t res = mbrtowc(&wc, (const char *)s, clen, &st);
