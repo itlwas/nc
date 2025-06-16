@@ -13,17 +13,15 @@ void buffer_free(Buffer *buffer) {
 }
 Line *line_insert(Line *prev, Line *next) {
 	Line *line = (Line *)xmalloc(sizeof(Line));
-	line->s = (unsigned char *)xmalloc(BUFF_SIZE);
+	line->s = (unsigned char *)xmalloc(1);
 	line->s[0] = '\0';
 	line->len = 0;
-	line->cap = BUFF_SIZE;
+	line->cap = 1;
 	line->width = LINE_WIDTH_UNCACHED;
 	line->prev = prev;
 	line->next = next;
-	if (prev)
-		prev->next = line;
-	if (next)
-		next->prev = line;
+	if (prev) prev->next = line;
+	if (next) next->prev = line;
 	return line;
 }
 void line_delete(Line *line) {
@@ -40,11 +38,10 @@ void line_delete(Line *line) {
 }
 static inline void line_reserve(Line *line, size_t additional) {
 	size_t required = line->len + additional + 1;
-	if (required <= line->cap)
-		return;
-	size_t new_cap = line->cap ? line->cap : BUFF_SIZE;
-	while (new_cap < required)
-		new_cap <<= 1;
+	if (required <= line->cap) return;
+	size_t new_cap = line->cap;
+	if (new_cap == 0) new_cap = 1;
+	while (new_cap < required) new_cap <<= 1;
 	line->s = (unsigned char *)xrealloc(line->s, new_cap);
 	line->cap = new_cap;
 }
