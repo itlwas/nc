@@ -170,11 +170,13 @@ void edit_enter(void) {
 	render_scroll();
 }
 static void delete_char(void) {
-	size_t char_len = 1;
-	size_t i = mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x);
-	while (is_continuation_byte(editor.file.buffer.curr->s[--i]))
-		++char_len;
-	line_delete_str(editor.file.buffer.curr, i, char_len);
+	if (editor.file.cursor.x == 0)
+		return;
+	size_t start = mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x - 1);
+	size_t char_len = utf8_len(editor.file.buffer.curr->s[start]);
+	if (char_len == 0 || start + char_len > editor.file.buffer.curr->len)
+		char_len = 1;
+	line_delete_str(editor.file.buffer.curr, start, char_len);
 	--editor.file.cursor.x;
 	edit_fix_cursor_x();
 }

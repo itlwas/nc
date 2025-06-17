@@ -178,16 +178,16 @@ static void status_do_arrow_right(void) {
 		++statin->cx;
 }
 static void status_do_backspace(void) {
-	if (statin->input->len > 0 && statin->cx > 0) {
-		size_t charlen = 1;
-		size_t i = mbnum_to_index(statin->input->s, statin->cx);
-		while (is_continuation_byte(statin->input->s[--i]))
-			++charlen;
-		line_delete_str(statin->input, i, charlen);
-		--statin->cx;
-		if (statin->charsoff > 0)
-			--statin->charsoff;
-	}
+	if (statin->input->len == 0 || statin->cx == 0)
+		return;
+	size_t start = mbnum_to_index(statin->input->s, statin->cx - 1);
+	size_t char_len = utf8_len(statin->input->s[start]);
+	if (char_len == 0 || start + char_len > statin->input->len)
+		char_len = 1;
+	line_delete_str(statin->input, start, char_len);
+	--statin->cx;
+	if (statin->charsoff > 0)
+		--statin->charsoff;
 }
 static void status_input_init(void) {
 	statin = (StatusInput *)xmalloc(sizeof(StatusInput));
