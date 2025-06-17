@@ -57,6 +57,7 @@ Line *line_insert(Line *prev, Line *next) {
 	line->len = 0;
 	line->cap = 1;
 	line->width = LINE_WIDTH_UNCACHED;
+	line->mb_len = LINE_MBLEN_UNCACHED;
 	line->prev = prev;
 	line->next = next;
 	if (prev) prev->next = line;
@@ -93,6 +94,7 @@ void line_insert_char(Line *line, size_t at, unsigned char c) {
 	++line->len;
 	line->s[line->len] = '\0';
 	line->width = LINE_WIDTH_UNCACHED;
+	line->mb_len = LINE_MBLEN_UNCACHED;
 }
 void line_delete_char(Line *line, size_t at) {
 	line_delete_str(line, at, 1);
@@ -110,6 +112,7 @@ void line_insert_str(Line *line, size_t at, const unsigned char *str) {
 	line->len += str_len;
 	line->s[line->len] = '\0';
 	line->width = LINE_WIDTH_UNCACHED;
+	line->mb_len = LINE_MBLEN_UNCACHED;
 }
 void line_delete_str(Line *line, size_t at, size_t len) {
 	if (len == 0 || at >= line->len)
@@ -119,6 +122,7 @@ void line_delete_str(Line *line, size_t at, size_t len) {
 	memmove(line->s + at, line->s + at + len, line->len - at - len + 1);
 	line->len -= len;
 	line->width = LINE_WIDTH_UNCACHED;
+	line->mb_len = LINE_MBLEN_UNCACHED;
 }
 size_t line_width(Line *line) {
 	if (line->width == LINE_WIDTH_UNCACHED)
@@ -126,5 +130,7 @@ size_t line_width(Line *line) {
 	return line->width;
 }
 size_t line_mblen(Line *line) {
-	return index_to_mbnum(line->s, line->len);
+	if (line->mb_len == LINE_MBLEN_UNCACHED)
+		line->mb_len = index_to_mbnum(line->s, line->len);
+	return line->mb_len;
 }

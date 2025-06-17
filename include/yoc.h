@@ -21,6 +21,7 @@
 #define HSCROLL_MARGIN 5
 #define LINE_WIDTH_UNCACHED ((size_t)-1)
 #define SCREEN_ROWS(x) (((x) <= 1) ? 1 : ((x) - 1))
+#define LINE_MBLEN_UNCACHED ((size_t)-1)
 typedef int bool_t;
 typedef struct line_t Line;
 struct line_t {
@@ -28,6 +29,7 @@ struct line_t {
 	size_t len;
 	size_t cap;
 	size_t width;
+	size_t mb_len;
 	Line *prev;
 	Line *next;
 };
