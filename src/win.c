@@ -52,17 +52,18 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 }
 void term_write(const unsigned char *s, size_t len) {
 	int required;
-	wchar_t *wbuf;
+	static wchar_t *wbuf = NULL;
+	static size_t wcap = 0;
 	if (len == 0) return;
 	required = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s, (int)len, NULL, 0);
 	if (required <= 0) die("MultiByteToWideChar");
-	wbuf = (wchar_t *)xmalloc((size_t)required * sizeof(wchar_t));
-	if (MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s, (int)len, wbuf, required) != required) {
-		free(wbuf);
-		die("MultiByteToWideChar");
+	if ((size_t)required > wcap) {
+		wbuf = (wchar_t *)xrealloc(wbuf, (size_t)required * sizeof(wchar_t));
+		wcap = (size_t)required;
 	}
+	if (MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s, (int)len, wbuf, required) != required)
+		die("MultiByteToWideChar");
 	write_console_wide(wbuf, (size_t)required);
-	free(wbuf);
 }
 size_t term_read(unsigned char **s, int *special_key) {
 	wchar_t c = get_wch(special_key);
