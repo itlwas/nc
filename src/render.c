@@ -62,9 +62,11 @@ static void render_rows(void) {
 	if (!rowbuf) ensure_screen_buffer();
 	for (y = 0; y < editor.rows; ++y) {
 		rowbuf[0] = '\0';
+		size_t row_len = 0;
 		if (line && show_line_numbers) {
 			size_t lnum = editor.window.y + y + 1;
 			sprintf(rowbuf, " %*lu ", (int)digits, (unsigned long)lnum);
+			row_len = strlen(rowbuf);
 		}
 		if (!line) {
 			if (y == editor.rows / 3 && editor.file.buffer.num_lines == 1 && editor.file.buffer.begin->len == 0) {
@@ -81,9 +83,11 @@ static void render_rows(void) {
 				memcpy(rowbuf + pos, msg, (size_t)welcomelen);
 				pos += (size_t)welcomelen;
 				rowbuf[pos] = '\0';
+				row_len = pos;
 			} else {
 				rowbuf[0] = '~';
 				rowbuf[1] = '\0';
+				row_len = 1;
 			}
 		} else {
 			const unsigned char *s = line->s;
@@ -117,9 +121,10 @@ static void render_rows(void) {
 				i += char_len;
 			}
 			rowbuf[pos] = '\0';
+			row_len = pos;
 			line = line->next;
 		}
-		draw_line(y, (unsigned char *)rowbuf, strlen(rowbuf));
+		draw_line(y, (unsigned char *)rowbuf, row_len);
 	}
 }
 static void render_status_bar(void) {

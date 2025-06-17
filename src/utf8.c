@@ -107,9 +107,15 @@ size_t cursor_x_to_rx(Line *line, size_t x) {
 			continue;
 		}
 		if (!is_continuation_byte(line->s[i])) {
-			size_t char_len;
-			rx += char_display_width_impl(line->s + i, &char_len);
-			i += char_len;
+			unsigned char c = line->s[i];
+			if (c < 0x80u) {
+				rx += 1;
+				i += 1;
+			} else {
+				size_t char_len;
+				rx += char_display_width_impl(line->s + i, &char_len);
+				i += char_len;
+			}
 		} else {
 			i += 1;
 		}
@@ -133,6 +139,15 @@ size_t rx_to_cursor_x(Line *line, size_t rx_target) {
 			continue;
 		}
 		if (!is_continuation_byte(line->s[pos])) {
+			unsigned char c = line->s[pos];
+			if (c < 0x80u) {
+				if (rx + 1 > rx_target)
+					break;
+				rx += 1;
+				++x;
+				++pos;
+				continue;
+			}
 			size_t char_len;
 			size_t w = char_display_width_impl(line->s + pos, &char_len);
 			if (rx + w > rx_target)
