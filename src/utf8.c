@@ -151,28 +151,35 @@ size_t str_width(const unsigned char *s, size_t len) {
 }
 size_t length_to_width(const unsigned char *s, size_t len) {
 	size_t col = 0;
-	size_t i;
-	for (i = 0; i < len;) {
-		if (s[i] == '\t') {
+	size_t i = 0;
+	while (i < len) {
+		unsigned char c = s[i];
+		if (c == '\t') {
 			col += editor.tabsize - col % editor.tabsize;
-			i += 1;
+			++i;
 			continue;
 		}
-		if (!is_continuation_byte(s[i])) {
+		if (c < 0x80u) {
+			++col;
+			++i;
+			continue;
+		}
+		if (!is_continuation_byte(c)) {
 			size_t char_len;
 			col += char_display_width_impl(s + i, &char_len);
 			i += char_len;
 		} else {
-			i += 1;
+			++i;
 		}
 	}
 	return col;
 }
 size_t width_to_length(const unsigned char *s, size_t width) {
 	size_t len = 0;
-	size_t col;
-	for (col = 0; col < width && s[len] != '\0';) {
-		if (s[len] == '\t') {
+	size_t col = 0;
+	while (col < width && s[len] != '\0') {
+		unsigned char c = s[len];
+		if (c == '\t') {
 			size_t ts = editor.tabsize - col % editor.tabsize;
 			if (col + ts > width)
 				break;
@@ -180,7 +187,14 @@ size_t width_to_length(const unsigned char *s, size_t width) {
 			++len;
 			continue;
 		}
-		if (!is_continuation_byte(s[len])) {
+		if (c < 0x80u) {
+			if (col + 1 > width)
+				break;
+			++col;
+			++len;
+			continue;
+		}
+		if (!is_continuation_byte(c)) {
 			size_t char_len;
 			size_t w = char_display_width_impl(s + len, &char_len);
 			if (col + w > width)
