@@ -142,10 +142,15 @@ static void ensure_screen_buffer(void) {
 			free(editor.screen_lines[r]);
 		free(editor.screen_lines);
 	}
+	if (editor.screen_lens) {
+		free(editor.screen_lens);
+	}
 	editor.screen_lines = (char **)xmalloc(rows_needed * sizeof(char *));
+	editor.screen_lens = (size_t *)xmalloc(rows_needed * sizeof(size_t));
 	for (r = 0; r < rows_needed; ++r) {
 		editor.screen_lines[r] = (char *)xmalloc((editor.cols * MAXCHARLEN) + 1);
 		editor.screen_lines[r][0] = '\0';
+		editor.screen_lens[r] = 0;
 	}
 	editor.screen_rows = rows_needed;
 	editor.screen_cols = editor.cols;
@@ -166,7 +171,7 @@ static void draw_line(size_t row, const unsigned char *line, size_t len) {
 	size_t rx_common;
 	size_t new_width, clear_from, clear_to;
 	if (row >= editor.screen_rows) return;
-	prev_len = strlen(editor.screen_lines[row]);
+	prev_len = editor.screen_lens[row];
 	if (prev_len == len && memcmp(editor.screen_lines[row], line, len) == 0) return;
 	i = 0;
 	rx_common = 0;
@@ -193,6 +198,7 @@ static void draw_line(size_t row, const unsigned char *line, size_t len) {
 		len = editor.cols * MAXCHARLEN;
 	memcpy(editor.screen_lines[row], line, len);
 	editor.screen_lines[row][len] = '\0';
+	editor.screen_lens[row] = len;
 }
 void render_free(void) {
 	size_t r;
@@ -211,7 +217,11 @@ void render_free(void) {
 			free(editor.screen_lines[r]);
 		free(editor.screen_lines);
 		editor.screen_lines = NULL;
-		editor.screen_rows = 0;
-		editor.screen_cols = 0;
 	}
+	if (editor.screen_lens) {
+		free(editor.screen_lens);
+		editor.screen_lens = NULL;
+	}
+	editor.screen_rows = 0;
+	editor.screen_cols = 0;
 }

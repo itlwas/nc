@@ -66,6 +66,7 @@ typedef struct {
 	size_t rows;
 	size_t cols;
 	char **screen_lines;
+	size_t *screen_lens;
 	size_t screen_rows;
 	size_t screen_cols;
 } Editor;

@@ -20,6 +20,7 @@ static void init(char *file_path) {
 	editor.screen_lines = NULL;
 	editor.screen_rows = 0;
 	editor.screen_cols = 0;
+	editor.screen_lens = NULL;
 	file_init(&editor.file);
 	if (file_path) {
 		size_t len = strlen(file_path);
