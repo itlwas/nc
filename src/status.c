@@ -49,8 +49,8 @@ void status_print(void) {
 		size_t mlen;
 		if (status_mode == NORMAL)
 			status_set_default();
-		term_clear_line();
 		term_write((unsigned char*)rev_on, strlen(rev_on));
+		term_clear_line();
 		mlen = editor.file.status.len;
 		if (mlen > editor.cols)
 			mlen = editor.cols;
