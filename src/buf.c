@@ -1,14 +1,15 @@
 #include "yoc.h"
 #include <string.h>
 static void line_reserve(Line *line, size_t additional) {
-	size_t new_cap;
 	size_t required = line->len + additional + 1;
 	if (required <= line->cap) return;
-	new_cap = (line->cap == 0) ? 1 : line->cap;
+	size_t new_cap = line->cap;
+	if (new_cap < LINE_INLINE_CAP)
+		new_cap = LINE_INLINE_CAP;
 	while (new_cap < required) {
-		if (new_cap < 1024) {
+		if (new_cap < 1024)
 			new_cap <<= 1;
-		} else {
+		else {
 			size_t delta = new_cap >> 1;
 			if (delta == 0) {
 				new_cap = required;
@@ -21,7 +22,13 @@ static void line_reserve(Line *line, size_t additional) {
 			break;
 		}
 	}
-	line->s = (unsigned char *)xrealloc(line->s, new_cap);
+	if (line->s == line->inline_space) {
+		unsigned char *heap_mem = (unsigned char *)xmalloc(new_cap);
+		memcpy(heap_mem, line->s, line->len + 1);
+		line->s = heap_mem;
+	} else {
+		line->s = (unsigned char *)xrealloc(line->s, new_cap);
+	}
 	line->cap = new_cap;
 }
 void buf_init(Buffer *buffer) {
@@ -45,17 +52,18 @@ void buf_delete_line(Buffer *buffer, Line *line) {
 		buffer->begin = line->next;
 	if (buffer->curr == line)
 		buffer->curr = line->next ? line->next : line->prev;
-	free(line->s);
+	if (line->s != line->inline_space)
+		free(line->s);
 	free(line);
 	if (buffer->num_lines)
 		--buffer->num_lines;
 }
 Line *line_insert(Line *prev, Line *next) {
 	Line *line = (Line *)xmalloc(sizeof(Line));
-	line->s = (unsigned char *)xmalloc(1);
-	line->s[0] = '\0';
+	line->s = line->inline_space;
+	line->inline_space[0] = '\0';
 	line->len = 0;
-	line->cap = 1;
+	line->cap = LINE_INLINE_CAP;
 	line->width = LINE_WIDTH_UNCACHED;
 	line->mb_len = LINE_MBLEN_UNCACHED;
 	line->prev = prev;
@@ -73,14 +81,16 @@ void line_delete(Line *line) {
 	} else if (line->next) {
 		line->next->prev = NULL;
 	}
-	free(line->s);
+	if (line->s != line->inline_space)
+		free(line->s);
 	free(line);
 }
 void line_free(Line *line) {
 	while (line) {
 		Line *temp = line;
 		line = line->next;
-		free(temp->s);
+		if (temp->s != temp->inline_space)
+			free(temp->s);
 		free(temp);
 	}
 }
