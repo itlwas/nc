@@ -1,8 +1,8 @@
 .PHONY: build clean
 CC ?= gcc
-CFLAGS := -Iinclude -D_FILE_OFFSET_BITS=64 -Wall -Wextra -pipe -Os -ffunction-sections -fdata-sections
-SRC := yoc editor display buffer file utils
-PLAT := $(if $(filter Windows_NT,$(OS)),platform_windows,platform_unix)
+CFLAGS := -Iinclude -std=c89 -D_FILE_OFFSET_BITS=64 -Wall -Wextra -pipe -Os -ffunction-sections -fdata-sections
+SRC := main edit render status buf file utf8 mem
+PLAT := $(if $(filter Windows_NT,$(OS)),win,unix)
 OBJ := $(addprefix obj/,$(SRC:=.o) $(PLAT).o)
 OUT := yoc$(if $(filter Windows_NT,$(OS)),.exe,)
 LDFLAGS += -Wl,--gc-sections -s
