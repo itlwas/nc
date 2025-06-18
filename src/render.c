@@ -27,23 +27,24 @@ void render_refresh(void) {
 	term_show_cursor();
 }
 void render_scroll(void) {
+	size_t margin = VSCROLL_MARGIN;
+	if (editor.rows <= VSCROLL_MARGIN * 2)
+		margin = 0;
 	editor.file.cursor.rx = 0;
 	if (editor.file.cursor.y < editor.file.buffer.num_lines)
 		editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
-	if (editor.file.cursor.y < editor.window.y + VSCROLL_MARGIN) {
-		editor.window.y = (editor.file.cursor.y < VSCROLL_MARGIN) ? 0 : editor.file.cursor.y - VSCROLL_MARGIN;
-	} else if (editor.file.cursor.y >= editor.window.y + editor.rows - VSCROLL_MARGIN) {
-		editor.window.y = editor.file.cursor.y - editor.rows + VSCROLL_MARGIN + 1;
-	}
-	if (editor.file.cursor.rx < editor.window.x + HSCROLL_MARGIN) {
+	if (editor.file.cursor.y < editor.window.y + margin)
+		editor.window.y = (editor.file.cursor.y < margin) ? 0 : editor.file.cursor.y - margin;
+	else if (editor.file.cursor.y >= editor.window.y + editor.rows - margin)
+		editor.window.y = editor.file.cursor.y - editor.rows + margin + 1;
+	if (editor.file.cursor.rx < editor.window.x + HSCROLL_MARGIN)
 		editor.window.x = (editor.file.cursor.rx < HSCROLL_MARGIN) ? 0 : editor.file.cursor.rx - HSCROLL_MARGIN;
-	} else if (editor.file.cursor.rx >= editor.window.x + editor.cols - (show_line_numbers ? lineno_pad : 0) - HSCROLL_MARGIN) {
+	else if (editor.file.cursor.rx >= editor.window.x + editor.cols - (show_line_numbers ? lineno_pad : 0) - HSCROLL_MARGIN)
 		editor.window.x = editor.file.cursor.rx - (editor.cols - (show_line_numbers ? lineno_pad : 0)) + HSCROLL_MARGIN + 1;
-	}
 	if (editor.file.buffer.curr != editor.top_line) {
 		Line *line = editor.file.buffer.begin;
 		size_t y = 0;
-		while(y < editor.window.y && line->next) {
+		while (y < editor.window.y && line->next) {
 			line = line->next;
 			y++;
 		}
