@@ -71,7 +71,7 @@ static void render_rows(void) {
 		if (!line) {
 			if (y == editor.rows / 3 && editor.file.buffer.num_lines == 1 && editor.file.buffer.begin->len == 0) {
 				char msg[32];
-				snprintf(msg, sizeof(msg), "yoc editor -- version %s", YOC_VERSION);
+				snprintf(msg, sizeof(msg), "yoc ~ %s", YOC_VERSION);
 				size_t welcomelen = strlen(msg);
 				size_t padding = (editor.cols - (size_t)welcomelen) / 2;
 				size_t pos = 0;
