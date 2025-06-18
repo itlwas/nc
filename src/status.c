@@ -145,10 +145,10 @@ static void status_set_default(void) {
 	status_realloc(editor.cols + 1);
 	path = editor.file.path[0] ? editor.file.path : "[No Name]";
 	if (editor.file.is_modified && editor.file.path[0] != '\0')
-		left_len = sprintf(editor.file.status.msg, "%s [+]", path);
+		left_len = snprintf(editor.file.status.msg, editor.file.status.cap, "%s [+]", path);
 	else
-		left_len = sprintf(editor.file.status.msg, "%s", path);
-	right_len = sprintf(right_str, "%zu:%zu", editor.file.cursor.y + 1, editor.file.cursor.rx + 1);
+		left_len = snprintf(editor.file.status.msg, editor.file.status.cap, "%s", path);
+	right_len = snprintf(right_str, sizeof(right_str), "%zu:%zu", editor.file.cursor.y + 1, editor.file.cursor.rx + 1);
 	if ((size_t)(left_len + right_len + 1) > editor.cols) {
 		left_len = editor.cols - right_len - 1;
 		if (left_len < 0) left_len = 0;

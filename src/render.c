@@ -65,13 +65,14 @@ static void render_rows(void) {
 		size_t row_len = 0;
 		if (line && show_line_numbers) {
 			size_t lnum = editor.window.y + y + 1;
-			sprintf(rowbuf, " %*lu ", (int)digits, (unsigned long)lnum);
+			snprintf(rowbuf, rowbuf_cap, " %*lu ", (int)digits, (unsigned long)lnum);
 			row_len = strlen(rowbuf);
 		}
 		if (!line) {
 			if (y == editor.rows / 3 && editor.file.buffer.num_lines == 1 && editor.file.buffer.begin->len == 0) {
 				char msg[32];
-				int welcomelen = sprintf(msg, "yoc editor -- version %s", YOC_VERSION);
+				snprintf(msg, sizeof(msg), "yoc editor -- version %s", YOC_VERSION);
+				size_t welcomelen = strlen(msg);
 				size_t padding = (editor.cols - (size_t)welcomelen) / 2;
 				size_t pos = 0;
 				if (padding) {

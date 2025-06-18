@@ -93,7 +93,7 @@ void file_quit_prompt(void) {
 		Line *input = line_insert(NULL, NULL);
 		char prompt[256];
 		const char *name = editor.file.path[0] ? editor.file.path : "[No Name]";
-		sprintf(prompt, "Save changes to %s before closing? (y,n,esc): ", name);
+		snprintf(prompt, sizeof(prompt), "Save changes to %s before closing? (y,n,esc): ", name);
 		if (status_input(input, prompt, NULL)) {
 			char answer = tolower((unsigned char)input->s[0]);
 			if (answer == 'y') {
