@@ -1,5 +1,14 @@
 #include "yoc.h"
 #include <string.h>
+static const char *extract_filename(const char *path) {
+	const char *basename = path;
+	while (*path) {
+		if (*path == '/' || *path == '\\')
+			basename = path + 1;
+		path++;
+	}
+	return basename;
+}
 typedef struct {
 	size_t cx;
 	char *msg;
@@ -137,13 +146,13 @@ static void status_realloc(size_t len) {
 	}
 }
 static void status_set_default(void) {
-	char *path;
+	const char *path;
 	int left_len;
 	char right_str[32];
 	int right_len;
 	int fill_len;
 	status_realloc(editor.cols + 1);
-	path = editor.file.path[0] ? editor.file.path : "[No Name]";
+	path = editor.file.path[0] ? extract_filename(editor.file.path) : "[No Name]";
 	if (editor.file.is_modified && editor.file.path[0] != '\0')
 		left_len = snprintf(editor.file.status.msg, editor.file.status.cap, "%s [+]", path);
 	else
