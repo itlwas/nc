@@ -132,6 +132,12 @@ bool_t is_file_exist(char *filename) {
 	struct stat buffer;
 	return (stat(filename, &buffer) == 0);
 }
+void file_canonicalize_path(const char *path, char *out_path, size_t out_size) {
+	if (realpath(path, out_path) == NULL) {
+		strncpy(out_path, path, out_size -1);
+		out_path[out_size-1] = '\0';
+	}
+}
 static void handle_winch(int sig) {
 	(void)sig;
 	render_refresh();

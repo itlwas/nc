@@ -23,13 +23,15 @@ static void init(char *file_path) {
 	editor.screen_lens = NULL;
 	file_init(&editor.file);
 	if (file_path) {
-		size_t len = strlen(file_path);
+		char canonical_path[4096];
+		file_canonicalize_path(file_path, canonical_path, sizeof(canonical_path));
+		size_t len = strlen(canonical_path);
 		if (len + 1 > editor.file.cap) {
 			editor.file.cap = len + 1;
 			editor.file.path = (char *)xrealloc(editor.file.path, editor.file.cap);
 		}
-		memcpy(editor.file.path, file_path, len + 1);
-		if (is_file_exist(file_path)) {
+		memcpy(editor.file.path, canonical_path, len + 1);
+		if (is_file_exist(editor.file.path)) {
 			file_load(&editor.file);
 			editor.file.is_modified = FALSE;
 		}

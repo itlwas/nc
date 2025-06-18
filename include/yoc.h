@@ -148,6 +148,7 @@ void file_save(File *file);
 bool_t file_save_prompt(void);
 void file_quit_prompt(void);
 bool_t is_file_exist(char *filename);
+void file_canonicalize_path(const char *path, char *out_path, size_t out_size);
 void term_init(void);
 void term_get_win_size(size_t *x, size_t *y);
 void term_clear_line(void);
