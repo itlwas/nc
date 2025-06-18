@@ -15,8 +15,18 @@ size_t term_read(unsigned char **s, int *special_key) {
 	static unsigned char buf[64];
 	int nread;
 	*s = NULL;
-	while ((nread = read(STDIN_FILENO, buf, sizeof(buf) - 1)) <= 0)
-		if (nread == -1 && errno != EAGAIN) die("read");
+	for (;;) {
+		nread = read(STDIN_FILENO, buf, sizeof(buf) - 1);
+		if (nread > 0) {
+			break;
+		}
+		if (nread == -1) {
+			if (errno == EINTR || errno == EAGAIN) {
+				continue;
+			}
+			die("read");
+		}
+	}
 	buf[nread] = '\0';
 	if (buf[0] == '\x1b') {
 		if (nread == 1) {
@@ -92,8 +102,8 @@ void term_enable_raw(void) {
 	raw.c_oflag &= ~(OPOST);
 	raw.c_cflag |= (CS8);
 	raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
-	raw.c_cc[VMIN] = 0;
-	raw.c_cc[VTIME] = 1;
+	raw.c_cc[VMIN] = 1;
+	raw.c_cc[VTIME] = 0;
 	if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1)
 		die("tcsetattr");
 	signal(SIGWINCH, handle_winch);
