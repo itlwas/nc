@@ -26,6 +26,7 @@ void file_load(File *file) {
 	ssize_t read;
 	FILE *f = fopen(file->path, "r");
 	if (!f) die("fopen");
+	setvbuf(f, NULL, _IOFBF, 65536);
 	read = getline(&line, &len, f);
 	if (read != -1) {
 		while (read > 0 && (line[read - 1] == '\n' || line[read - 1] == '\r'))
@@ -50,6 +51,7 @@ void file_save(File *file) {
 	ensure_trailing_empty_line(file);
 	f = fopen(file->path, "w");
 	if (!f) die("fopen");
+	setvbuf(f, NULL, _IOFBF, 65536);
 	line = file->buffer.begin;
 	for (; line && line->next; line = line->next) {
 		fputs((char *)line->s, f);

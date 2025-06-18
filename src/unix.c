@@ -12,7 +12,7 @@ void term_write(const unsigned char *s, size_t len) {
 		die("write");
 }
 size_t term_read(unsigned char **s, int *special_key) {
-	static unsigned char buf[16];
+	static unsigned char buf[64];
 	int nread;
 	*s = NULL;
 	while ((nread = read(STDIN_FILENO, buf, sizeof(buf) - 1)) <= 0)
