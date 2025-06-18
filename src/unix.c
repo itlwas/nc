@@ -5,6 +5,8 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <dirent.h>
 static struct termios orig_termios;
 static void handle_winch(int sig);
 void term_write(const unsigned char *s, size_t len) {
@@ -133,9 +135,42 @@ bool_t is_file_exist(char *filename) {
 	return (stat(filename, &buffer) == 0);
 }
 void file_canonicalize_path(const char *path, char *out_path, size_t out_size) {
+	char tmp[PATH_MAX];
 	if (realpath(path, out_path) == NULL) {
-		strncpy(out_path, path, out_size -1);
-		out_path[out_size-1] = '\0';
+		strncpy(out_path, path, out_size - 1);
+		out_path[out_size - 1] = '\0';
+	}
+	strncpy(tmp, out_path, sizeof(tmp) - 1);
+	tmp[sizeof(tmp) - 1] = '\0';
+	char *slash = strrchr(tmp, '/');
+	const char *base = slash ? slash + 1 : tmp;
+	char dirbuf[PATH_MAX];
+	DIR *dir;
+	if (slash) {
+		*slash = '\0';
+		dir = opendir(tmp[0] ? tmp : "/");
+		strncpy(dirbuf, tmp, sizeof(dirbuf) - 1);
+		dirbuf[sizeof(dirbuf) - 1] = '\0';
+	} else {
+		dir = opendir(".");
+		dirbuf[0] = '\0';
+	}
+	if (dir) {
+		struct dirent *de;
+		while ((de = readdir(dir)) != NULL) {
+			if (strcasecmp(de->d_name, base) == 0) {
+				if (slash) {
+					size_t needed = strlen(dirbuf) + 1 + strlen(de->d_name) + 1;
+					if (needed <= out_size) {
+						snprintf(out_path, out_size, "%s/%s", dirbuf, de->d_name);
+					}
+				} else {
+					snprintf(out_path, out_size, "%s", de->d_name);
+				}
+				break;
+			}
+		}
+		closedir(dir);
 	}
 }
 static void handle_winch(int sig) {
