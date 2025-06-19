@@ -10,8 +10,9 @@ static void break_line(void);
 static void join_with_prev_line(void);
 void edit_move_home(void) {
 	size_t pos = find_first_nonblank(editor.file.buffer.curr->s);
-	if (pos < editor.file.buffer.curr->len && editor.file.cursor.x != pos)
-		editor.file.cursor.x = pos;
+	size_t fn_x = index_to_mbnum(editor.file.buffer.curr->s, pos);
+	if (pos < editor.file.buffer.curr->len && editor.file.cursor.x != fn_x)
+		editor.file.cursor.x = fn_x;
 	else
 		editor.file.cursor.x = 0;
 	desired_rx = 0;
@@ -65,8 +66,9 @@ void edit_move_right(void) {
 	if (editor.file.cursor.x < line_mblen(editor.file.buffer.curr))
 		++editor.file.cursor.x;
 	else if (editor.file.buffer.curr->next) {
-		edit_move_down();
-		edit_move_home();
+		editor.file.buffer.curr = editor.file.buffer.curr->next;
+		++editor.file.cursor.y;
+		editor.file.cursor.x = 0;
 	}
 	desired_rx = editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 }
@@ -121,6 +123,7 @@ void edit_move_page_up(void) {
 	while (y--) edit_move_up();
 	edit_fix_cursor_x();
 	render_scroll();
+	desired_rx = editor.file.cursor.rx;
 }
 void edit_move_page_down(void) {
 	size_t y = editor.rows;
@@ -130,11 +133,13 @@ void edit_move_page_down(void) {
 	while (y--) edit_move_down();
 	edit_fix_cursor_x();
 	render_scroll();
+	desired_rx = editor.file.cursor.rx;
 }
 void edit_move_top(void) {
 	editor.file.cursor.x = 0;
 	editor.file.cursor.y = 0;
 	editor.file.buffer.curr = editor.file.buffer.begin;
+	desired_rx = 0;
 }
 void edit_move_bottom(void) {
 	while (editor.file.buffer.curr->next) {
@@ -142,6 +147,7 @@ void edit_move_bottom(void) {
 		editor.file.buffer.curr = editor.file.buffer.curr->next;
 	}
 	edit_move_end();
+	desired_rx = editor.file.cursor.rx;
 }
 void edit_fix_cursor_x(void) {
 	size_t len = line_mblen(editor.file.buffer.curr);
