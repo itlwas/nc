@@ -169,10 +169,15 @@ void edit_fix_cursor_x(void) {
 		editor.file.cursor.x = len;
 }
 void edit_insert(const unsigned char *s) {
-	line_insert_str(editor.file.buffer.curr, mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x), s);
+	size_t s_len = strlen((const char *)s);
+	line_insert_str(
+		editor.file.buffer.curr,
+		mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x),
+		s
+	);
 	editor.file.is_modified = TRUE;
 	maybe_reset_modified();
-	editor.file.cursor.x += index_to_mbnum(s, strlen((char*)s));
+	editor.file.cursor.x += index_to_mbnum(s, s_len);
 	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
 }
