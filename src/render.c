@@ -12,6 +12,7 @@ static size_t rowbuf_cap = 0;
 static char *spaces = NULL;
 static size_t spaces_cap = 0;
 static size_t lineno_pad = 0;
+static bool_t prev_scrollbar_visible = FALSE;
 bool_t show_line_numbers = TRUE;
 void render_refresh(void) {
 	size_t digits = 1;
@@ -71,6 +72,11 @@ static void render_rows(void) {
 		bar_start = (editor.window.y * editor.rows) / total_lines;
 		if (bar_start + bar_height > editor.rows)
 			bar_start = editor.rows - bar_height;
+	}
+	if (!scrollbar && prev_scrollbar_visible && editor.screen_lens) {
+		size_t r;
+		for (r = 0; r < editor.screen_rows; ++r)
+			editor.screen_lens[r] = 0;
 	}
 	if (!rowbuf)
 		ensure_screen_buffer();
@@ -160,6 +166,7 @@ static void render_rows(void) {
 				term_write((const unsigned char *)" ", 1);
 		}
 	}
+	prev_scrollbar_visible = scrollbar;
 }
 static void render_status_bar(void) {
 	term_set_cursor(0, editor.rows);
