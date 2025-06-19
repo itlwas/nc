@@ -220,6 +220,7 @@ static void write_console_wide(const wchar_t *ws, size_t wlen) {
 		die("WriteConsoleW");
 }
 static wchar_t get_wch(int *special_key) {
+	*special_key = 0;
 	INPUT_RECORD input;
 	DWORD nread;
 	wchar_t retval = '\0';

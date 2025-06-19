@@ -16,6 +16,7 @@ void term_write(const unsigned char *s, size_t len) {
 size_t term_read(unsigned char **s, int *special_key) {
 	static unsigned char buf[64];
 	int nread;
+	*special_key = 0;
 	*s = NULL;
 	for (;;) {
 		nread = read(STDIN_FILENO, buf, sizeof(buf) - 1);

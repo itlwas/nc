@@ -66,8 +66,7 @@ static void render_rows(void) {
 		size_t row_len = 0;
 		if (line && show_line_numbers) {
 			size_t lnum = editor.window.y + y + 1;
-			snprintf(rowbuf, rowbuf_cap, " %*lu ", (int)digits, (unsigned long)lnum);
-			row_len = strlen(rowbuf);
+			row_len = (size_t)snprintf(rowbuf, rowbuf_cap, " %*lu ", (int)digits, (unsigned long)lnum);
 		}
 		if (!line) {
 			if (y == editor.rows / 3 && editor.file.buffer.num_lines == 1 && editor.file.buffer.begin->len == 0) {
@@ -93,7 +92,7 @@ static void render_rows(void) {
 			}
 		} else {
 			const unsigned char *s = line->s;
-			size_t i = 0, width = 0, pos = strlen(rowbuf);
+			size_t i = 0, width = 0, pos = row_len;
 			size_t text_cols = editor.cols - (show_line_numbers ? lineno_pad : 0);
 			while (i < line->len && width < editor.window.x + text_cols) {
 				unsigned char c = s[i];
