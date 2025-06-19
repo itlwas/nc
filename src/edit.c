@@ -1,7 +1,8 @@
 #include "yoc.h"
 #include <ctype.h>
 #include <string.h>
-static size_t desired_rx = 0;
+#define PREFERRED_COL_UNSET ((size_t)-1)
+static size_t desired_rx = PREFERRED_COL_UNSET;
 static void maybe_reset_modified(void);
 static bool_t buffer_matches_saved_file(void);
 static void delete_char(void);
@@ -16,16 +17,18 @@ void edit_move_home(void) {
 	else
 		editor.file.cursor.x = 0;
 	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
-	desired_rx = 0;
+	desired_rx = editor.file.cursor.rx;
 }
 void edit_move_end(void) {
 	editor.file.cursor.x = line_mblen(editor.file.buffer.curr);
-	desired_rx = editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	desired_rx = editor.file.cursor.rx;
 }
 void edit_move_up(void) {
 	if (editor.file.cursor.y > 0) {
 		bool_t start_of_line = (editor.file.cursor.x == 0);
-		desired_rx = editor.file.cursor.rx;
+		if (desired_rx == PREFERRED_COL_UNSET)
+			desired_rx = editor.file.cursor.rx;
 		editor.file.buffer.curr = editor.file.buffer.curr->prev;
 		--editor.file.cursor.y;
 		editor.file.cursor.x = rx_to_cursor_x(editor.file.buffer.curr, desired_rx);
@@ -35,13 +38,16 @@ void edit_move_up(void) {
 			size_t fn_x = index_to_mbnum(editor.file.buffer.curr->s, fn);
 			if (fn_x > 0)
 				editor.file.cursor.x = fn_x;
+			editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+			desired_rx = editor.file.cursor.rx;
 		}
 	}
 }
 void edit_move_down(void) {
 	if (editor.file.cursor.y < editor.file.buffer.num_lines - 1) {
 		bool_t start_of_line = (editor.file.cursor.x == 0);
-		desired_rx = editor.file.cursor.rx;
+		if (desired_rx == PREFERRED_COL_UNSET)
+			desired_rx = editor.file.cursor.rx;
 		editor.file.buffer.curr = editor.file.buffer.curr->next;
 		++editor.file.cursor.y;
 		editor.file.cursor.x = rx_to_cursor_x(editor.file.buffer.curr, desired_rx);
@@ -51,6 +57,8 @@ void edit_move_down(void) {
 			size_t fn_x = index_to_mbnum(editor.file.buffer.curr->s, fn);
 			if (fn_x > 0)
 				editor.file.cursor.x = fn_x;
+			editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+			desired_rx = editor.file.cursor.rx;
 		}
 	}
 }
@@ -61,7 +69,8 @@ void edit_move_left(void) {
 		edit_move_up();
 		edit_move_end();
 	}
-	desired_rx = editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	desired_rx = editor.file.cursor.rx;
 }
 void edit_move_right(void) {
 	if (editor.file.cursor.x < line_mblen(editor.file.buffer.curr))
@@ -71,7 +80,8 @@ void edit_move_right(void) {
 		++editor.file.cursor.y;
 		editor.file.cursor.x = 0;
 	}
-	desired_rx = editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	desired_rx = editor.file.cursor.rx;
 }
 void edit_move_prev_word(void) {
 	size_t pos = mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x);
@@ -124,7 +134,7 @@ void edit_move_page_up(void) {
 	while (y--) edit_move_up();
 	edit_fix_cursor_x();
 	render_scroll();
-	desired_rx = editor.file.cursor.rx;
+	desired_rx = PREFERRED_COL_UNSET;
 }
 void edit_move_page_down(void) {
 	size_t y = editor.rows;
@@ -132,13 +142,13 @@ void edit_move_page_down(void) {
 		edit_move_down();
 	edit_fix_cursor_x();
 	render_scroll();
-	desired_rx = editor.file.cursor.rx;
+	desired_rx = PREFERRED_COL_UNSET;
 }
 void edit_move_top(void) {
 	editor.file.cursor.x = 0;
 	editor.file.cursor.y = 0;
 	editor.file.buffer.curr = editor.file.buffer.begin;
-	desired_rx = 0;
+	desired_rx = PREFERRED_COL_UNSET;
 }
 void edit_move_bottom(void) {
 	while (editor.file.buffer.curr->next) {
@@ -146,7 +156,7 @@ void edit_move_bottom(void) {
 		editor.file.buffer.curr = editor.file.buffer.curr->next;
 	}
 	edit_move_end();
-	desired_rx = editor.file.cursor.rx;
+	desired_rx = PREFERRED_COL_UNSET;
 }
 void edit_fix_cursor_x(void) {
 	size_t len = line_mblen(editor.file.buffer.curr);
