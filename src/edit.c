@@ -15,6 +15,7 @@ void edit_move_home(void) {
 		editor.file.cursor.x = fn_x;
 	else
 		editor.file.cursor.x = 0;
+	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = 0;
 }
 void edit_move_end(void) {
