@@ -60,6 +60,17 @@ static void render_rows(void) {
 	Line *line = editor.top_line;
 	size_t y;
 	size_t digits = lineno_pad ? lineno_pad - 2 : 1;
+	bool_t scrollbar = (editor.file.buffer.num_lines > editor.rows);
+	size_t total_lines = editor.file.buffer.num_lines;
+	size_t bar_height = 0;
+	size_t bar_start = 0;
+	if (scrollbar) {
+		bar_height = (editor.rows * editor.rows) / total_lines;
+		if (bar_height == 0) bar_height = 1;
+		bar_start = (editor.window.y * editor.rows) / total_lines;
+		if (bar_start + bar_height > editor.rows)
+			bar_start = editor.rows - bar_height;
+	}
 	if (!rowbuf) ensure_screen_buffer();
 	for (y = 0; y < editor.rows; ++y) {
 		rowbuf[0] = '\0';
@@ -68,19 +79,20 @@ static void render_rows(void) {
 			size_t lnum = editor.window.y + y + 1;
 			row_len = (size_t)snprintf(rowbuf, rowbuf_cap, " %*lu ", (int)digits, (unsigned long)lnum);
 		}
+		size_t avail_cols = editor.cols - (scrollbar ? 1 : 0);
 		if (!line) {
 			if (y == editor.rows / 3 && editor.file.buffer.num_lines == 1 && editor.file.buffer.begin->len == 0) {
 				char msg[32];
 				snprintf(msg, sizeof(msg), "yoc ~ %s", YOC_VERSION);
 				size_t welcomelen = strlen(msg);
-				size_t padding = (editor.cols - (size_t)welcomelen) / 2;
+				size_t padding = (avail_cols - (size_t)welcomelen) / 2;
 				size_t pos = 0;
 				if (padding) {
 					rowbuf[pos++] = '~';
 					--padding;
 				}
-				while (padding-- > 0 && pos < editor.cols) rowbuf[pos++] = ' ';
-				if (pos + (size_t)welcomelen > editor.cols) welcomelen = (int)(editor.cols - pos);
+				while (padding-- > 0 && pos < avail_cols) rowbuf[pos++] = ' ';
+				if (pos + (size_t)welcomelen > avail_cols) welcomelen = (int)(avail_cols - pos);
 				memcpy(rowbuf + pos, msg, (size_t)welcomelen);
 				pos += (size_t)welcomelen;
 				rowbuf[pos] = '\0';
@@ -93,7 +105,7 @@ static void render_rows(void) {
 		} else {
 			const unsigned char *s = line->s;
 			size_t i = 0, width = 0, pos = row_len;
-			size_t text_cols = editor.cols - (show_line_numbers ? lineno_pad : 0);
+			size_t text_cols = avail_cols - (show_line_numbers ? lineno_pad : 0);
 			while (i < line->len && width < editor.window.x + text_cols) {
 				unsigned char c = s[i];
 				size_t char_len = 1;
@@ -132,6 +144,16 @@ static void render_rows(void) {
 			line = line->next;
 		}
 		draw_line(y, (unsigned char *)rowbuf, row_len);
+		if (scrollbar) {
+			if (y >= bar_start && y < bar_start + bar_height) {
+				static const unsigned char sb_on[] = "¦";
+				term_set_cursor(editor.cols - 1, y);
+				term_write(sb_on, sizeof(sb_on) - 1);
+			} else {
+				term_set_cursor(editor.cols - 1, y);
+				term_write((const unsigned char *)" ", 1);
+			}
+		}
 	}
 }
 static void render_status_bar(void) {
