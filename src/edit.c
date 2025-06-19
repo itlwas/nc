@@ -106,6 +106,8 @@ void edit_move_prev_word(void) {
 	if (step_forward)
 		pos = move_mbright(editor.file.buffer.curr->s, pos);
 	editor.file.cursor.x = index_to_mbnum(editor.file.buffer.curr->s, pos);
+	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	desired_rx = editor.file.cursor.rx;
 	render_scroll();
 }
 void edit_move_next_word(void) {
@@ -127,6 +129,8 @@ void edit_move_next_word(void) {
 			break;
 	}
 	editor.file.cursor.x = index_to_mbnum(editor.file.buffer.curr->s, pos);
+	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	desired_rx = editor.file.cursor.rx;
 	render_scroll();
 }
 void edit_move_page_up(void) {
@@ -168,6 +172,8 @@ void edit_insert(const unsigned char *s) {
 	editor.file.is_modified = TRUE;
 	maybe_reset_modified();
 	editor.file.cursor.x += index_to_mbnum(s, strlen((char*)s));
+	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	desired_rx = editor.file.cursor.rx;
 }
 void edit_backspace(void) {
 	bool_t changed = FALSE;
@@ -184,6 +190,8 @@ void edit_backspace(void) {
 	if (changed)
 		editor.file.is_modified = TRUE;
 	maybe_reset_modified();
+	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	desired_rx = editor.file.cursor.rx;
 }
 void edit_enter(void) {
 	line_insert(editor.file.buffer.curr, editor.file.buffer.curr->next);
