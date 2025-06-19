@@ -127,10 +127,8 @@ void edit_move_page_up(void) {
 }
 void edit_move_page_down(void) {
 	size_t y = editor.rows;
-	editor.file.cursor.y += editor.rows;
-	if (editor.file.cursor.y > editor.file.buffer.num_lines - 1)
-		editor.file.cursor.y = editor.file.buffer.num_lines - 1;
-	while (y--) edit_move_down();
+	while (y-- && editor.file.cursor.y < editor.file.buffer.num_lines - 1)
+		edit_move_down();
 	edit_fix_cursor_x();
 	render_scroll();
 	desired_rx = editor.file.cursor.rx;
