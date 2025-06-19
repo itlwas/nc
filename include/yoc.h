@@ -163,4 +163,6 @@ void term_show_cursor(void);
 void term_set_cursor(size_t x, size_t y);
 void term_write(const unsigned char *s, size_t len);
 size_t term_read(unsigned char **s, int *special_key);
+void edit_move_prev_paragraph(void);
+void edit_move_next_paragraph(void);
 #endif

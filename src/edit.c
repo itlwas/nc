@@ -9,6 +9,7 @@ static void delete_char(void);
 static void delete_empty_line(void);
 static void break_line(void);
 static void join_with_prev_line(void);
+static bool_t is_blank(Line *line);
 void edit_move_home(void) {
 	size_t pos = find_first_nonblank(editor.file.buffer.curr->s);
 	size_t fn_x = index_to_mbnum(editor.file.buffer.curr->s, pos);
@@ -278,6 +279,8 @@ void edit_process_key(void) {
 		case CTRL_END: edit_move_bottom(); break;
 		case CTRL_ARROW_LEFT: edit_move_prev_word(); break;
 		case CTRL_ARROW_RIGHT: edit_move_next_word(); break;
+		case CTRL_ARROW_UP: edit_move_prev_paragraph(); break;
+		case CTRL_ARROW_DOWN: edit_move_next_paragraph(); break;
 		case CTRL_KEY('s'): file_save_prompt(); break;
 		case CTRL_KEY('q'): file_quit_prompt(); break;
 		case CTRL_KEY('r'): show_line_numbers = !show_line_numbers; break;
@@ -331,4 +334,47 @@ static bool_t buffer_matches_saved_file(void) {
 	free(disk_line);
 	fclose(f);
 	return TRUE;
+}
+static bool_t is_blank(Line *line) { return line->len == 0; }
+void edit_move_prev_paragraph(void) {
+	if (editor.file.cursor.y == 0)
+		return;
+	Line *line = editor.file.buffer.curr;
+	size_t y = editor.file.cursor.y;
+	/* Skip current blank lines, if any */
+	while (y > 0 && is_blank(line)) {
+		line = line->prev;
+		--y;
+	}
+	/* Skip the current paragraph */
+	while (y > 0 && line->prev && !is_blank(line->prev)) {
+		line = line->prev;
+		--y;
+	}
+	editor.file.buffer.curr = line;
+	editor.file.cursor.y = y;
+	edit_move_home();
+	desired_rx = PREFERRED_COL_UNSET;
+	render_scroll();
+}
+void edit_move_next_paragraph(void) {
+	if (editor.file.cursor.y >= editor.file.buffer.num_lines - 1)
+		return;
+	Line *line = editor.file.buffer.curr;
+	size_t y = editor.file.cursor.y;
+	/* Skip the remainder of the current paragraph */
+	while (y < editor.file.buffer.num_lines - 1 && !is_blank(line)) {
+		line = line->next;
+		++y;
+	}
+	/* Skip following blank lines */
+	while (y < editor.file.buffer.num_lines - 1 && is_blank(line)) {
+		line = line->next;
+		++y;
+	}
+	editor.file.buffer.curr = line;
+	editor.file.cursor.y = y;
+	edit_move_home();
+	desired_rx = PREFERRED_COL_UNSET;
+	render_scroll();
 }

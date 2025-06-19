@@ -43,6 +43,14 @@ size_t term_read(unsigned char **s, int *special_key) {
 					case 'H': *special_key = HOME; break;
 					case 'F': *special_key = END; break;
 				}
+			} else if (nread >= 6 && buf[1] == '[' && buf[2] == '1' && buf[3] == ';' && buf[4] == '5') {
+				switch (buf[5]) {
+					case 'A': *special_key = CTRL_ARROW_UP; break;   /* Ctrl+Up */
+					case 'B': *special_key = CTRL_ARROW_DOWN; break; /* Ctrl+Down */
+					case 'C': *special_key = CTRL_ARROW_RIGHT; break; /* Ctrl+Right */
+					case 'D': *special_key = CTRL_ARROW_LEFT; break;  /* Ctrl+Left */
+					default: *special_key = 0; break;
+				}
 			} else if (nread > 3 && buf[nread - 1] == '~') {
 				switch (buf[2]) {
 					case '1': *special_key = HOME; break;
