@@ -194,14 +194,27 @@ void edit_backspace(void) {
 	desired_rx = editor.file.cursor.rx;
 }
 void edit_enter(void) {
-	line_insert(editor.file.buffer.curr, editor.file.buffer.curr->next);
+	Line *prev_line = editor.file.buffer.curr;
+	line_insert(prev_line, prev_line->next);
 	editor.file.buffer.num_lines++;
-	if (editor.file.cursor.x < line_mblen(editor.file.buffer.curr))
+	if (editor.file.cursor.x < line_mblen(prev_line))
 		break_line();
-	editor.file.buffer.curr = editor.file.buffer.curr->next;
-	editor.file.cursor.x = 0;
+	editor.file.buffer.curr = prev_line->next;
 	++editor.file.cursor.y;
-	edit_move_home();
+	size_t indent_end = find_first_nonblank(prev_line->s);
+	size_t cursor_pos_bytes = mbnum_to_index(prev_line->s, editor.file.cursor.x);
+	if (cursor_pos_bytes < indent_end)
+		indent_end = cursor_pos_bytes;
+	if (indent_end > 0) {
+		unsigned char *indent = (unsigned char *)xmalloc(indent_end + 1);
+		memcpy(indent, prev_line->s, indent_end);
+		indent[indent_end] = '\0';
+		line_insert_str(editor.file.buffer.curr, 0, indent);
+		free(indent);
+	}
+	editor.file.cursor.x = index_to_mbnum(editor.file.buffer.curr->s, indent_end);
+	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	desired_rx = editor.file.cursor.rx;
 	editor.file.is_modified = TRUE;
 	maybe_reset_modified();
 	render_scroll();
