@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-static void ensure_trailing_empty_line(File *file);
 void file_init(File *file) {
 	status_init();
 	file->path = (char *)xmalloc(64);
@@ -46,21 +45,14 @@ void file_load(File *file) {
 	fclose(f);
 }
 void file_save(File *file) {
-	FILE *f;
-	Line *line;
-	ensure_trailing_empty_line(file);
-	f = fopen(file->path, "w");
+	FILE *f = fopen(file->path, "w");
 	if (!f) die("fopen");
 	setvbuf(f, NULL, _IOFBF, 65536);
-	line = file->buffer.begin;
-	for (; line && line->next; line = line->next) {
+	Line *line;
+	for (line = file->buffer.begin; line; line = line->next) {
 		fputs((char *)line->s, f);
-		fputs("\n", f);
-	}
-	if (line) {
-		fputs((char *)line->s, f);
-		if (line->len != 0)
-			fputs("\n", f);
+		if (line->next || line->len != 0)
+			fputc('\n', f);
 	}
 	fclose(f);
 }
@@ -114,15 +106,4 @@ void file_quit_prompt(void) {
 	file_free(&editor.file);
 	term_switch_to_norm();
 	exit(0);
-}
-static void ensure_trailing_empty_line(File *file) {
-	Line *line;
-	if (!file) return;
-	line = file->buffer.begin;
-	if (!line) return;
-	while (line->next) line = line->next;
-	if (line->len != 0) {
-		line_insert(line, NULL);
-		file->buffer.num_lines++;
-	}
 }
