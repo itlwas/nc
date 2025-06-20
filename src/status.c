@@ -170,7 +170,12 @@ static void status_set_default(void) {
 	editor.file.status.len = left_len + fill_len + right_len;
 }
 static void status_do_insert(unsigned char *s) {
-	line_insert_str(statin->input, mbnum_to_index(statin->input->s, statin->cx++), s);
+	size_t str_len = strlen((const char *)s);
+	if (str_len == 0)
+		return;
+	size_t chars = index_to_mbnum(s, str_len);
+	line_insert_str(statin->input, mbnum_to_index(statin->input->s, statin->cx), s);
+	statin->cx += chars;
 }
 static void status_do_home(void) {
 	statin->cx = 0;
