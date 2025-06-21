@@ -69,9 +69,12 @@ static void render_rows(void) {
 		size_t total_lines = editor.file.buffer.num_lines;
 		bar_height = (editor.rows * editor.rows) / total_lines;
 		if (bar_height == 0) bar_height = 1;
-		bar_start = (editor.window.y * editor.rows) / total_lines;
-		if (bar_start + bar_height > editor.rows)
-			bar_start = editor.rows - bar_height;
+		size_t scroll_pos = editor.window.y;
+		size_t max_scroll_pos = total_lines - editor.rows;
+		if (scroll_pos > max_scroll_pos) {
+			scroll_pos = max_scroll_pos;
+		}
+		bar_start = (scroll_pos * (editor.rows - bar_height)) / max_scroll_pos;
 	}
 	if (!scrollbar && prev_scrollbar_visible && editor.screen_lens) {
 		size_t r;
