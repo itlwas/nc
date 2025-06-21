@@ -47,10 +47,10 @@ size_t term_read(unsigned char **s, int *special_key) {
 				}
 			} else if (nread >= 6 && buf[1] == '[' && buf[2] == '1' && buf[3] == ';' && buf[4] == '5') {
 				switch (buf[5]) {
-					case 'A': *special_key = CTRL_ARROW_UP; break;   /* Ctrl+Up */
-					case 'B': *special_key = CTRL_ARROW_DOWN; break; /* Ctrl+Down */
-					case 'C': *special_key = CTRL_ARROW_RIGHT; break; /* Ctrl+Right */
-					case 'D': *special_key = CTRL_ARROW_LEFT; break;  /* Ctrl+Left */
+					case 'A': *special_key = CTRL_ARROW_UP; break;
+					case 'B': *special_key = CTRL_ARROW_DOWN; break;
+					case 'C': *special_key = CTRL_ARROW_RIGHT; break;
+					case 'D': *special_key = CTRL_ARROW_LEFT; break;
 					default: *special_key = 0; break;
 				}
 			} else if (nread > 3 && buf[nread - 1] == '~') {
@@ -140,14 +140,14 @@ void term_set_cursor(size_t x, size_t y) {
 	int len = snprintf(buf, sizeof(buf), "\x1b[%zu;%zuH", y + 1, x + 1);
 	term_write((unsigned char *)buf, (size_t)len);
 }
-bool_t is_file_exist(char *filename) {
+bool_t fs_exists(const char *path) {
 	struct stat buffer;
-	return (stat(filename, &buffer) == 0);
+	return (stat(path, &buffer) == 0);
 }
-void file_canonicalize_path(const char *path, char *out_path, size_t out_size) {
-	if (realpath(path, out_path) == NULL) {
-		strncpy(out_path, path, out_size - 1);
-		out_path[out_size - 1] = '\0';
+void fs_canonicalize(const char *path, char *out, size_t size) {
+	if (realpath(path, out) == NULL) {
+		strncpy(out, path, size - 1);
+		out[size - 1] = '\0';
 	}
 }
 static void handle_winch(int sig) {

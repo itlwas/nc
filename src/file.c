@@ -51,13 +51,13 @@ void file_load(File *file) {
 		size_t line_len = next_nl ? (size_t)(next_nl - p) : (size_t)(end - p);
 		if (line_len > 0 && p[line_len - 1] == '\r') line_len--;
 		if (first_line) {
-			line_insert_n_str(file->buffer.curr, 0, (unsigned char *)p, line_len);
+			line_insert_strn(file->buffer.curr, 0, (unsigned char *)p, line_len);
 			first_line = FALSE;
 		} else {
-			line_insert(file->buffer.curr, file->buffer.curr->next);
+			line_new(file->buffer.curr, file->buffer.curr->next);
 			file->buffer.curr = file->buffer.curr->next;
 			file->buffer.num_lines++;
-			line_insert_n_str(file->buffer.curr, 0, (unsigned char *)p, line_len);
+			line_insert_strn(file->buffer.curr, 0, (unsigned char *)p, line_len);
 		}
 		if (!next_nl) break;
 		p = next_nl + 1;
@@ -83,7 +83,7 @@ bool_t file_save_prompt(void) {
 		editor.file.is_modified = FALSE;
 		return TRUE;
 	}
-	input = line_insert(NULL, NULL);
+	input = line_new(NULL, NULL);
 	if (status_input(input, "Save as: ", NULL)) {
 		if (input->len > 0) {
 			if (input->len + 1 > editor.file.cap) {
@@ -102,7 +102,7 @@ bool_t file_save_prompt(void) {
 }
 void file_quit_prompt(void) {
 	if (editor.file.is_modified) {
-		Line *input = line_insert(NULL, NULL);
+		Line *input = line_new(NULL, NULL);
 		char prompt[256];
 		const char *name = editor.file.path[0] ? editor.file.path : "[No Name]";
 		snprintf(prompt, sizeof(prompt), "Save changes to %s before closing? (y,n,esc): ", name);

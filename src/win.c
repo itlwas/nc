@@ -1,6 +1,5 @@
 #include "yoc.h"
 #include <windows.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <errno.h>
 #include <wchar.h>
@@ -203,17 +202,6 @@ void term_set_cursor(size_t x, size_t y) {
 	if (!SetConsoleCursorPosition(hOut, coord))
 		die("SetConsoleCursorPosition");
 }
-bool_t is_file_exist(char *filename) {
-	DWORD dwAttrib = GetFileAttributes(filename);
-	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
-		!(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
-}
-void file_canonicalize_path(const char *path, char *out_path, size_t out_size) {
-	if (GetFullPathNameA(path, (DWORD)out_size, out_path, NULL) == 0) {
-		strncpy(out_path, path, out_size - 1);
-		out_path[out_size - 1] = '\0';
-	}
-}
 static void write_console_wide(const wchar_t *ws, size_t wlen) {
 	DWORD written;
 	if (!WriteConsoleW(hOut, ws, (DWORD)wlen, &written, NULL))
@@ -281,4 +269,15 @@ static void save_current_title(void) {
 static void restore_title(void) {
 	if (!SetConsoleTitle(old_title))
 		die("SetConsoleTitle");
+}
+bool_t fs_exists(const char *path) {
+	DWORD dwAttrib = GetFileAttributes(path);
+	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+		!(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+}
+void fs_canonicalize(const char *path, char *out, size_t size) {
+	if (GetFullPathNameA(path, (DWORD)size, out, NULL) == 0) {
+		strncpy(out, path, size - 1);
+		out[size - 1] = '\0';
+	}
 }

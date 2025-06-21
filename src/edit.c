@@ -16,12 +16,12 @@ void edit_move_home(void) {
 		editor.file.cursor.x = fn_x;
 	else
 		editor.file.cursor.x = 0;
-	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
 }
 void edit_move_end(void) {
-	editor.file.cursor.x = line_mblen(editor.file.buffer.curr);
-	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	editor.file.cursor.x = line_get_mblen(editor.file.buffer.curr);
+	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
 }
 void edit_move_up(void) {
@@ -31,14 +31,14 @@ void edit_move_up(void) {
 			desired_rx = editor.file.cursor.rx;
 		editor.file.buffer.curr = editor.file.buffer.curr->prev;
 		--editor.file.cursor.y;
-		editor.file.cursor.x = rx_to_cursor_x(editor.file.buffer.curr, desired_rx);
+		editor.file.cursor.x = rx_to_x(editor.file.buffer.curr, desired_rx);
 		edit_fix_cursor_x();
 		if (start_of_line) {
 			size_t fn = find_first_nonblank(editor.file.buffer.curr->s);
 			size_t fn_x = index_to_mbnum(editor.file.buffer.curr->s, fn);
 			if (fn_x > 0)
 				editor.file.cursor.x = fn_x;
-			editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+			editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 			desired_rx = editor.file.cursor.rx;
 		}
 	}
@@ -50,14 +50,14 @@ void edit_move_down(void) {
 			desired_rx = editor.file.cursor.rx;
 		editor.file.buffer.curr = editor.file.buffer.curr->next;
 		++editor.file.cursor.y;
-		editor.file.cursor.x = rx_to_cursor_x(editor.file.buffer.curr, desired_rx);
+		editor.file.cursor.x = rx_to_x(editor.file.buffer.curr, desired_rx);
 		edit_fix_cursor_x();
 		if (start_of_line) {
 			size_t fn = find_first_nonblank(editor.file.buffer.curr->s);
 			size_t fn_x = index_to_mbnum(editor.file.buffer.curr->s, fn);
 			if (fn_x > 0)
 				editor.file.cursor.x = fn_x;
-			editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+			editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 			desired_rx = editor.file.cursor.rx;
 		}
 	}
@@ -69,18 +69,18 @@ void edit_move_left(void) {
 		edit_move_up();
 		edit_move_end();
 	}
-	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
 }
 void edit_move_right(void) {
-	if (editor.file.cursor.x < line_mblen(editor.file.buffer.curr))
+	if (editor.file.cursor.x < line_get_mblen(editor.file.buffer.curr))
 		++editor.file.cursor.x;
 	else if (editor.file.buffer.curr->next) {
 		editor.file.buffer.curr = editor.file.buffer.curr->next;
 		++editor.file.cursor.y;
 		editor.file.cursor.x = 0;
 	}
-	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
 }
 void edit_move_prev_word(void) {
@@ -106,7 +106,7 @@ void edit_move_prev_word(void) {
 	if (step_forward)
 		pos = move_mbright(editor.file.buffer.curr->s, pos);
 	editor.file.cursor.x = index_to_mbnum(editor.file.buffer.curr->s, pos);
-	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
 	render_scroll();
 }
@@ -129,18 +129,18 @@ void edit_move_next_word(void) {
 			break;
 	}
 	editor.file.cursor.x = index_to_mbnum(editor.file.buffer.curr->s, pos);
-	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
 	render_scroll();
 }
-void edit_move_page_up(void) {
+void edit_move_pgup(void) {
 	size_t y = editor.rows;
 	while (y--) edit_move_up();
 	edit_fix_cursor_x();
 	render_scroll();
 	desired_rx = PREFERRED_COL_UNSET;
 }
-void edit_move_page_down(void) {
+void edit_move_pgdown(void) {
 	size_t y = editor.rows;
 	while (y-- && editor.file.cursor.y < editor.file.buffer.num_lines - 1)
 		edit_move_down();
@@ -163,13 +163,13 @@ void edit_move_bottom(void) {
 	desired_rx = PREFERRED_COL_UNSET;
 }
 void edit_fix_cursor_x(void) {
-	size_t len = line_mblen(editor.file.buffer.curr);
+	size_t len = line_get_mblen(editor.file.buffer.curr);
 	if (editor.file.cursor.x > len)
 		editor.file.cursor.x = len;
 }
 void edit_insert_n(const unsigned char *s, size_t s_len) {
 	if (s_len == 0) return;
-	line_insert_n_str(
+	line_insert_strn(
 		editor.file.buffer.curr,
 		mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x),
 		s,
@@ -178,7 +178,7 @@ void edit_insert_n(const unsigned char *s, size_t s_len) {
 	editor.file.is_modified = TRUE;
 	maybe_reset_modified();
 	editor.file.cursor.x += index_to_mbnum(s, s_len);
-	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
 }
 void edit_insert(const unsigned char *s) {
@@ -199,14 +199,14 @@ void edit_backspace(void) {
 	if (changed)
 		editor.file.is_modified = TRUE;
 	maybe_reset_modified();
-	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
 }
 void edit_enter(void) {
 	Line *prev_line = editor.file.buffer.curr;
-	line_insert(prev_line, prev_line->next);
+	line_new(prev_line, prev_line->next);
 	editor.file.buffer.num_lines++;
-	if (editor.file.cursor.x < line_mblen(prev_line))
+	if (editor.file.cursor.x < line_get_mblen(prev_line))
 		break_line();
 	editor.file.buffer.curr = prev_line->next;
 	++editor.file.cursor.y;
@@ -218,11 +218,11 @@ void edit_enter(void) {
 		unsigned char *indent = (unsigned char *)xmalloc(indent_end + 1);
 		memcpy(indent, prev_line->s, indent_end);
 		indent[indent_end] = '\0';
-		line_insert_n_str(editor.file.buffer.curr, 0, indent, indent_end);
+		line_insert_strn(editor.file.buffer.curr, 0, indent, indent_end);
 		free(indent);
 	}
 	editor.file.cursor.x = index_to_mbnum(editor.file.buffer.curr->s, indent_end);
-	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
 	editor.file.is_modified = TRUE;
 	maybe_reset_modified();
@@ -235,33 +235,33 @@ static void delete_char(void) {
 	size_t char_len = utf8_len(editor.file.buffer.curr->s[start]);
 	if (char_len == 0 || start + char_len > editor.file.buffer.curr->len)
 		char_len = 1;
-	line_delete_str(editor.file.buffer.curr, start, char_len);
+	line_del_str(editor.file.buffer.curr, start, char_len);
 	--editor.file.cursor.x;
 	edit_fix_cursor_x();
 }
 static void delete_empty_line(void) {
 	editor.file.buffer.curr = editor.file.buffer.curr->prev;
-	editor.file.cursor.x = line_mblen(editor.file.buffer.curr);
+	editor.file.cursor.x = line_get_mblen(editor.file.buffer.curr);
 	--editor.file.cursor.y;
-	buf_delete_line(&editor.file.buffer, editor.file.buffer.curr->next);
+	buf_del_line(&editor.file.buffer, editor.file.buffer.curr->next);
 }
 static void break_line(void) {
 	size_t at = mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x);
 	size_t len_to_move = editor.file.buffer.curr->len - at;
 	unsigned char *line_content = (unsigned char *)xmalloc(len_to_move + 1);
 	memmove(line_content, editor.file.buffer.curr->s + at, len_to_move + 1);
-	line_insert_n_str(editor.file.buffer.curr->next, 0, line_content, len_to_move);
-	line_delete_str(editor.file.buffer.curr, at, editor.file.buffer.curr->len - at);
+	line_insert_strn(editor.file.buffer.curr->next, 0, line_content, len_to_move);
+	line_del_str(editor.file.buffer.curr, at, editor.file.buffer.curr->len - at);
 	free(line_content);
 }
 static void join_with_prev_line(void) {
 	Line *current_line = editor.file.buffer.curr;
 	Line *prev_line = current_line->prev;
-	editor.file.cursor.x = line_mblen(prev_line);
-	line_insert_n_str(prev_line, prev_line->len, current_line->s, current_line->len);
+	editor.file.cursor.x = line_get_mblen(prev_line);
+	line_insert_strn(prev_line, prev_line->len, current_line->s, current_line->len);
 	editor.file.buffer.curr = prev_line;
 	--editor.file.cursor.y;
-	buf_delete_line(&editor.file.buffer, current_line);
+	buf_del_line(&editor.file.buffer, current_line);
 }
 void edit_process_key(void) {
 	int special_key;
@@ -276,8 +276,8 @@ void edit_process_key(void) {
 		case ENTER: edit_enter(); break;
 		case HOME: edit_move_home(); break;
 		case END: edit_move_end(); break;
-		case PAGE_UP: edit_move_page_up(); break;
-		case PAGE_DOWN: edit_move_page_down(); break;
+		case PAGE_UP: edit_move_pgup(); break;
+		case PAGE_DOWN: edit_move_pgdown(); break;
 		case ARROW_LEFT: edit_move_left(); break;
 		case ARROW_UP: edit_move_up(); break;
 		case ARROW_RIGHT: edit_move_right(); break;
@@ -286,8 +286,8 @@ void edit_process_key(void) {
 		case CTRL_END: edit_move_bottom(); break;
 		case CTRL_ARROW_LEFT: edit_move_prev_word(); break;
 		case CTRL_ARROW_RIGHT: edit_move_next_word(); break;
-		case CTRL_ARROW_UP: edit_move_prev_paragraph(); break;
-		case CTRL_ARROW_DOWN: edit_move_next_paragraph(); break;
+		case CTRL_ARROW_UP: edit_move_prev_para(); break;
+		case CTRL_ARROW_DOWN: edit_move_next_para(); break;
 		case CTRL_KEY('s'): file_save_prompt(); break;
 		case CTRL_KEY('q'): file_quit_prompt(); break;
 		case CTRL_KEY('r'): show_line_numbers = !show_line_numbers; break;
@@ -298,13 +298,13 @@ void edit_process_key(void) {
 }
 static void maybe_reset_modified(void) {
 	if (editor.file.buffer.num_lines == 1 && editor.file.buffer.begin->len == 0) {
-		if (editor.file.path[0] == '\0' || !is_file_exist(editor.file.path)) {
+		if (editor.file.path[0] == '\0' || !fs_exists(editor.file.path)) {
 			editor.file.is_modified = FALSE;
 		}
 	}
 }
 static bool_t is_blank(Line *line) { return line->len == 0; }
-void edit_move_prev_paragraph(void) {
+void edit_move_prev_para(void) {
 	if (editor.file.cursor.y == 0)
 		return;
 	Line *line = editor.file.buffer.curr;
@@ -323,7 +323,7 @@ void edit_move_prev_paragraph(void) {
 	desired_rx = PREFERRED_COL_UNSET;
 	render_scroll();
 }
-void edit_move_next_paragraph(void) {
+void edit_move_next_para(void) {
 	if (editor.file.cursor.y >= editor.file.buffer.num_lines - 1)
 		return;
 	Line *line = editor.file.buffer.curr;

@@ -1,15 +1,7 @@
 #include "yoc.h"
 #include <ctype.h>
-#include <wctype.h>
-#include <wchar.h>
 #include <string.h>
-#if defined(_WIN32) && !defined(YOCP_NO_WCWIDTH)
-#define YOCP_NO_WCWIDTH
-#endif
-#ifndef YOCP_NO_WCWIDTH
-#include <wchar.h>
-#endif
-static size_t char_display_width_impl(const unsigned char *s, size_t *char_len_out);
+static int is_word_char(const unsigned char *s);
 size_t utf8_len(unsigned char c) {
 	if ((c & 0x80u) == 0) return 1;
 	if ((c & 0x40u) == 0) return 0;
@@ -21,16 +13,9 @@ bool_t is_continuation_byte(unsigned char c) {
 	return (c & 0xC0u) == 0x80u;
 }
 bool_t is_alnum_mbchar(const unsigned char *s) {
-	mbstate_t state;
-	wchar_t wc;
-	size_t res;
 	if ((*s & 0x80u) == 0)
 		return isalnum((unsigned char)*s);
-	memset(&state, 0, sizeof(state));
-	res = mbrtowc(&wc, (const char *)s, MAXCHARLEN, &state);
-	if (res == (size_t)-1 || res == (size_t)-2)
-		return FALSE;
-	return iswalnum(wc);
+	return is_word_char(s);
 }
 size_t move_mbleft(const unsigned char *s, size_t pos) {
 	while (pos && is_continuation_byte(s[--pos]));
@@ -56,108 +41,57 @@ size_t mbnum_to_index(const unsigned char *s, size_t n) {
 	size_t pos = 0;
 	size_t i = 0;
 	for (i = 0; i < n; ++i) {
-		if (!is_continuation_byte(s[pos]))
-			++pos;
-		while (is_continuation_byte(s[pos]))
-			++pos;
+		if (s[pos] == '\0') break;
+		pos = move_mbright(s, pos);
 	}
 	return pos;
 }
 size_t char_display_width(const unsigned char *s) {
-	return char_display_width_impl(s, NULL);
+	unsigned char c = *s;
+	if (c < 0x20) return 0;
+	if ((c & 0x80u) == 0) return 1;
+	if (is_continuation_byte(c)) return 0;
+	if (utf8_len(c) > 0) return 1;
+	return 0;
 }
-static size_t char_display_width_impl(const unsigned char *s, size_t *char_len_out) {
-	size_t clen;
-	if (((*s & 0x80u) == 0)) {
-		if (char_len_out)
-			*char_len_out = 1;
-		return 1;
-	}
-	clen = utf8_len(*s);
-	if (clen == 0 || clen > MAXCHARLEN)
-		clen = 1;
-	if (char_len_out)
-		*char_len_out = clen;
-#ifndef YOCP_NO_WCWIDTH
-	{
-		mbstate_t st;
-		wchar_t wc;
-		size_t res;
-		int w;
-		memset(&st, 0, sizeof(st));
-		res = mbrtowc(&wc, (const char *)s, clen, &st);
-		if (res == (size_t)-1 || res == (size_t)-2)
-			return 1;
-		w = wcwidth(wc);
-		return (w < 0) ? 1u : (size_t)w;
-	}
-#else
-	(void)clen;
-	return 1;
-#endif
-}
-size_t cursor_x_to_rx(Line *line, size_t x) {
+size_t x_to_rx(Line *line, size_t x) {
 	size_t rx = 0;
 	size_t pos = mbnum_to_index(line->s, x);
 	size_t i;
-	for (i = 0; i < pos;) {
-		if (line->s[i] == '\t') {
-			rx += editor.tabsize - (rx & (editor.tabsize - 1));
-			i += 1;
-			continue;
-		}
-		if (!is_continuation_byte(line->s[i])) {
-			unsigned char c = line->s[i];
-			if (c < 0x80u) {
-				rx += 1;
-				i += 1;
-			} else {
-				size_t char_len;
-				rx += char_display_width_impl(line->s + i, &char_len);
-				i += char_len;
-			}
+	for (i = 0; i < pos; ) {
+		unsigned char c = line->s[i];
+		if (c == '\t') {
+			rx += editor.tabsize - (rx % editor.tabsize);
+			i++;
 		} else {
-			i += 1;
+			size_t len = utf8_len(c);
+			if (len == 0) len = 1;
+			rx += char_display_width(&line->s[i]);
+			i += len;
 		}
 	}
 	return rx;
 }
-size_t rx_to_cursor_x(Line *line, size_t rx_target) {
+size_t rx_to_x(Line *line, size_t rx_target) {
 	size_t rx = 0;
 	size_t x = 0;
 	size_t pos = 0;
-	while (line->s[pos] != '\0') {
-		if (rx >= rx_target)
-			break;
-		if (line->s[pos] == '\t') {
-			size_t ts = editor.tabsize - (rx & (editor.tabsize - 1));
-			if (rx + ts > rx_target)
-				break;
-			rx += ts;
-			++x;
-			++pos;
-			continue;
-		}
-		if (!is_continuation_byte(line->s[pos])) {
-			unsigned char c = line->s[pos];
-			if (c < 0x80u) {
-				if (rx + 1 > rx_target)
-					break;
-				rx += 1;
-				++x;
-				++pos;
-				continue;
-			}
-			size_t char_len;
-			size_t w = char_display_width_impl(line->s + pos, &char_len);
-			if (rx + w > rx_target)
-				break;
-			rx += w;
-			++x;
-			pos += char_len;
+	while (line->s[pos] != '\0' && rx < rx_target) {
+		unsigned char c = line->s[pos];
+		if (c == '\t') {
+			size_t tab_w = editor.tabsize - (rx % editor.tabsize);
+			if (rx + tab_w > rx_target) break;
+			rx += tab_w;
+			pos++;
 		} else {
-			++pos;
+			size_t char_w = char_display_width(&line->s[pos]);
+			size_t len = utf8_len(c);
+			if (len == 0) len = 1;
+			if (rx + char_w > rx_target) break;
+			rx += char_w;
+			pos += len;
 		}
+		x++;
 	}
 	return x;
 }
@@ -169,56 +103,43 @@ size_t length_to_width(const unsigned char *s, size_t len) {
 	size_t i = 0;
 	while (i < len) {
 		unsigned char c = s[i];
+		size_t char_len = 1;
 		if (c == '\t') {
-			col += editor.tabsize - (col & (editor.tabsize - 1));
-			++i;
-			continue;
-		}
-		if (c < 0x80u) {
-			++col;
-			++i;
-			continue;
-		}
-		if (!is_continuation_byte(c)) {
-			size_t char_len;
-			col += char_display_width_impl(s + i, &char_len);
-			i += char_len;
+			col += editor.tabsize - (col % editor.tabsize);
+		} else if ((c & 0x80u) == 0) {
+			col++;
 		} else {
-			++i;
+			char_len = utf8_len(c);
+			if (char_len > 0) col++;
+			else char_len = 1;
 		}
+		i += char_len;
 	}
 	return col;
 }
 size_t width_to_length(const unsigned char *s, size_t width) {
 	size_t len = 0;
 	size_t col = 0;
-	while (col < width && s[len] != '\0') {
+	while (s[len] != '\0' && col < width) {
 		unsigned char c = s[len];
+		size_t char_len = 1;
 		if (c == '\t') {
-			size_t ts = editor.tabsize - col % editor.tabsize;
-			if (col + ts > width)
-				break;
-			col += ts;
-			++len;
-			continue;
-		}
-		if (c < 0x80u) {
-			if (col + 1 > width)
-				break;
-			++col;
-			++len;
-			continue;
-		}
-		if (!is_continuation_byte(c)) {
-			size_t char_len;
-			size_t w = char_display_width_impl(s + len, &char_len);
-			if (col + w > width)
-				break;
-			col += w;
-			len += char_len;
+			size_t tab_w = editor.tabsize - (col % editor.tabsize);
+			if (col + tab_w > width) break;
+			col += tab_w;
+		} else if ((c & 0x80u) == 0) {
+			if (col + 1 > width) break;
+			col++;
 		} else {
-			++len;
+			char_len = utf8_len(c);
+			if (char_len > 0) {
+				if (col + 1 > width) break;
+				col++;
+			} else {
+				char_len = 1;
+			}
 		}
+		len += char_len;
 	}
 	return len;
 }
@@ -227,4 +148,11 @@ size_t find_first_nonblank(const unsigned char *s) {
 	while (s[i] != '\0' && isspace((unsigned char)s[i]))
 		++i;
 	return i;
+}
+static int is_word_char(const unsigned char *s) {
+	if (s[0] == '\0' || isspace(s[0])) return 0;
+	if ((s[0] & 0x80u) != 0) {
+		return utf8_len(s[0]) > 0 && !is_continuation_byte(s[1]);
+	}
+	return !ispunct(s[0]);
 }

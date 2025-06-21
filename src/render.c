@@ -34,7 +34,7 @@ void render_scroll(void) {
 		margin = 0;
 	editor.file.cursor.rx = 0;
 	if (editor.file.cursor.y < editor.file.buffer.num_lines)
-		editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+		editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	if (editor.file.cursor.y < editor.window.y + margin)
 		editor.window.y = (editor.file.cursor.y < margin) ? 0 : editor.file.cursor.y - margin;
 	else if (editor.file.cursor.y >= editor.window.y + editor.rows - margin)

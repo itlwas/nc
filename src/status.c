@@ -121,7 +121,7 @@ static void status_input_print(void) {
 		statin->charsoff = statin->cx;
 	else if (statin->cx - statin->charsoff > free_space)
 		statin->charsoff = statin->cx - free_space;
-	input_width = line_width(statin->input);
+	input_width = line_get_width(statin->input);
 	start = mbnum_to_index(statin->input->s, statin->charsoff);
 	if (input_width - statin->charsoff > free_space)
 		len = width_to_length(statin->input->s + start, free_space);
@@ -178,14 +178,14 @@ static void status_do_home(void) {
 	statin->cx = 0;
 }
 static void status_do_end(void) {
-	statin->cx = line_mblen(statin->input);
+	statin->cx = line_get_mblen(statin->input);
 }
 static void status_do_arrow_left(void) {
 	if (statin->cx > 0)
 		--statin->cx;
 }
 static void status_do_arrow_right(void) {
-	if (statin->cx < line_mblen(statin->input))
+	if (statin->cx < line_get_mblen(statin->input))
 		++statin->cx;
 }
 static void status_do_backspace(void) {
@@ -195,7 +195,7 @@ static void status_do_backspace(void) {
 	size_t char_len = utf8_len(statin->input->s[start]);
 	if (char_len == 0 || start + char_len > statin->input->len)
 		char_len = 1;
-	line_delete_str(statin->input, start, char_len);
+	line_del_str(statin->input, start, char_len);
 	--statin->cx;
 	if (statin->charsoff > 0)
 		--statin->charsoff;

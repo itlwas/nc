@@ -25,17 +25,17 @@ static void line_reserve(Line *line, size_t additional) {
 	line->cap = new_cap;
 }
 void buf_init(Buffer *buffer) {
-	buffer->begin = buffer->curr = line_insert(NULL, NULL);
+	buffer->begin = buffer->curr = line_new(NULL, NULL);
 	buffer->num_lines = 1;
 }
 void buf_free(Buffer *buffer) {
 	while (buffer->begin) {
 		Line *temp = buffer->begin;
 		buffer->begin = buffer->begin->next;
-		line_delete(temp);
+		line_del(temp);
 	}
 }
-void buf_delete_line(Buffer *buffer, Line *line) {
+void buf_del_line(Buffer *buffer, Line *line) {
 	if (!buffer || !line) return;
 	if (line->prev)
 		line->prev->next = line->next;
@@ -51,13 +51,13 @@ void buf_delete_line(Buffer *buffer, Line *line) {
 	if (buffer->num_lines)
 		--buffer->num_lines;
 	if (buffer->num_lines == 0) {
-		buffer->begin = buffer->curr = line_insert(NULL, NULL);
+		buffer->begin = buffer->curr = line_new(NULL, NULL);
 		buffer->num_lines = 1;
 	}
 	if (!buffer->curr)
 		buffer->curr = buffer->begin;
 }
-Line *line_insert(Line *prev, Line *next) {
+Line *line_new(Line *prev, Line *next) {
 	Line *line = (Line *)xmalloc(sizeof(Line));
 	line->s = line->inline_space;
 	line->inline_space[0] = '\0';
@@ -71,7 +71,7 @@ Line *line_insert(Line *prev, Line *next) {
 	if (next) next->prev = line;
 	return line;
 }
-void line_delete(Line *line) {
+void line_del(Line *line) {
 	if (line->prev && line->next) {
 		line->prev->next = line->next;
 		line->next->prev = line->prev;
@@ -105,8 +105,8 @@ void line_insert_char(Line *line, size_t at, unsigned char c) {
 	line->width = LINE_WIDTH_UNCACHED;
 	line->mb_len = LINE_MBLEN_UNCACHED;
 }
-void line_delete_char(Line *line, size_t at) {
-	line_delete_str(line, at, 1);
+void line_del_char(Line *line, size_t at) {
+	line_del_str(line, at, 1);
 }
 void line_insert_str(Line *line, size_t at, const unsigned char *str) {
 	size_t str_len = strlen((const char *)str);
@@ -123,7 +123,7 @@ void line_insert_str(Line *line, size_t at, const unsigned char *str) {
 	line->width = LINE_WIDTH_UNCACHED;
 	line->mb_len = LINE_MBLEN_UNCACHED;
 }
-void line_insert_n_str(Line *line, size_t at, const unsigned char *str, size_t len) {
+void line_insert_strn(Line *line, size_t at, const unsigned char *str, size_t len) {
 	if (len == 0)
 		return;
 	if (at > line->len)
@@ -137,7 +137,7 @@ void line_insert_n_str(Line *line, size_t at, const unsigned char *str, size_t l
 	line->width = LINE_WIDTH_UNCACHED;
 	line->mb_len = LINE_MBLEN_UNCACHED;
 }
-void line_delete_str(Line *line, size_t at, size_t len) {
+void line_del_str(Line *line, size_t at, size_t len) {
 	if (len == 0 || at >= line->len)
 		return;
 	if (at + len > line->len)
@@ -147,12 +147,12 @@ void line_delete_str(Line *line, size_t at, size_t len) {
 	line->width = LINE_WIDTH_UNCACHED;
 	line->mb_len = LINE_MBLEN_UNCACHED;
 }
-size_t line_width(Line *line) {
+size_t line_get_width(Line *line) {
 	if (line->width == LINE_WIDTH_UNCACHED)
 		line->width = length_to_width(line->s, line->len);
 	return line->width;
 }
-size_t line_mblen(Line *line) {
+size_t line_get_mblen(Line *line) {
 	if (line->mb_len == LINE_MBLEN_UNCACHED)
 		line->mb_len = index_to_mbnum(line->s, line->len);
 	return line->mb_len;

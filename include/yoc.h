@@ -23,6 +23,7 @@
 #define SCREEN_ROWS(x) (((x) <= 1) ? 1 : ((x) - 1))
 #define LINE_MBLEN_UNCACHED ((size_t)-1)
 #define LINE_INLINE_CAP 16
+#define CTRL_KEY(k) ((k) & 0x1f)
 typedef int bool_t;
 typedef struct line_t Line;
 struct line_t {
@@ -86,7 +87,6 @@ enum key {
 	DEL = 46,
 	CTRL_END = 100, CTRL_HOME, CTRL_ARROW_LEFT, CTRL_ARROW_UP, CTRL_ARROW_RIGHT, CTRL_ARROW_DOWN
 };
-#define CTRL_KEY(k) ((k) & 0x1f)
 void die(const char *msg);
 void *xmalloc(size_t size);
 void *xrealloc(void *ptr, size_t size);
@@ -101,22 +101,22 @@ size_t char_display_width(const unsigned char *s);
 size_t str_width(const unsigned char *s, size_t len);
 size_t length_to_width(const unsigned char *s, size_t len);
 size_t width_to_length(const unsigned char *s, size_t width);
-size_t rx_to_cursor_x(Line *line, size_t rx_target);
-size_t cursor_x_to_rx(Line *line, size_t x);
+size_t rx_to_x(Line *line, size_t rx_target);
+size_t x_to_rx(Line *line, size_t x);
 size_t find_first_nonblank(const unsigned char *s);
 void buf_init(Buffer *buffer);
 void buf_free(Buffer *buffer);
-void buf_delete_line(Buffer *buffer, Line *line);
-Line *line_insert(Line *prev, Line *next);
-void line_delete(Line *line);
+void buf_del_line(Buffer *buffer, Line *line);
+Line *line_new(Line *prev, Line *next);
+void line_del(Line *line);
 void line_free(Line *line);
 void line_insert_char(Line *line, size_t at, unsigned char c);
-void line_delete_char(Line *line, size_t at);
+void line_del_char(Line *line, size_t at);
 void line_insert_str(Line *line, size_t at, const unsigned char *str);
-void line_insert_n_str(Line *line, size_t at, const unsigned char *str, size_t len);
-void line_delete_str(Line *line, size_t at, size_t len);
-size_t line_width(Line *line);
-size_t line_mblen(Line *line);
+void line_insert_strn(Line *line, size_t at, const unsigned char *str, size_t len);
+void line_del_str(Line *line, size_t at, size_t len);
+size_t line_get_width(Line *line);
+size_t line_get_mblen(Line *line);
 void render_refresh(void);
 void render_scroll(void);
 void render_free(void);
@@ -137,19 +137,21 @@ void edit_move_left(void);
 void edit_move_right(void);
 void edit_move_prev_word(void);
 void edit_move_next_word(void);
-void edit_move_page_up(void);
-void edit_move_page_down(void);
+void edit_move_pgup(void);
+void edit_move_pgdown(void);
 void edit_move_top(void);
 void edit_move_bottom(void);
 void edit_fix_cursor_x(void);
+void edit_move_prev_para(void);
+void edit_move_next_para(void);
 void file_init(File *file);
 void file_free(File *file);
 void file_load(File *file);
 void file_save(File *file);
 bool_t file_save_prompt(void);
 void file_quit_prompt(void);
-bool_t is_file_exist(char *filename);
-void file_canonicalize_path(const char *path, char *out_path, size_t out_size);
+bool_t fs_exists(const char *path);
+void fs_canonicalize(const char *path, char *out, size_t size);
 void term_init(void);
 void term_get_win_size(size_t *x, size_t *y);
 void term_clear_line(void);
@@ -164,6 +166,4 @@ void term_show_cursor(void);
 void term_set_cursor(size_t x, size_t y);
 void term_write(const unsigned char *s, size_t len);
 size_t term_read(unsigned char **s, int *special_key);
-void edit_move_prev_paragraph(void);
-void edit_move_next_paragraph(void);
 #endif
