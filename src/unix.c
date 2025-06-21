@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <limits.h>
 static struct termios orig_termios;
 static void handle_winch(int sig);
 void term_write(const unsigned char *s, size_t len) {

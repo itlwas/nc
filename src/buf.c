@@ -1,27 +1,20 @@
 #include "yoc.h"
 #include <string.h>
+static size_t calc_capacity(size_t current, size_t required) {
+	if (current < LINE_INLINE_CAP)
+		current = LINE_INLINE_CAP;
+	while (current < required) {
+		size_t candidate = (current < 1024) ? current << 1 : current + (current >> 1);
+		if (candidate <= current || candidate > (size_t)-1 / 2)
+			return required;
+		current = candidate;
+	}
+	return current;
+}
 static void line_reserve(Line *line, size_t additional) {
 	size_t required = line->len + additional + 1;
 	if (required <= line->cap) return;
-	size_t new_cap = line->cap;
-	if (new_cap < LINE_INLINE_CAP)
-		new_cap = LINE_INLINE_CAP;
-	while (new_cap < required) {
-		if (new_cap < 1024)
-			new_cap <<= 1;
-		else {
-			size_t delta = new_cap >> 1;
-			if (delta == 0) {
-				new_cap = required;
-				break;
-			}
-			new_cap += delta;
-		}
-		if (new_cap > (size_t)-1 / 2) {
-			new_cap = required;
-			break;
-		}
-	}
+	size_t new_cap = calc_capacity(line->cap, required);
 	if (line->s == line->inline_space) {
 		unsigned char *heap_mem = (unsigned char *)xmalloc(new_cap);
 		memcpy(heap_mem, line->s, line->len + 1);
@@ -57,6 +50,12 @@ void buf_delete_line(Buffer *buffer, Line *line) {
 	free(line);
 	if (buffer->num_lines)
 		--buffer->num_lines;
+	if (buffer->num_lines == 0) {
+		buffer->begin = buffer->curr = line_insert(NULL, NULL);
+		buffer->num_lines = 1;
+	}
+	if (!buffer->curr)
+		buffer->curr = buffer->begin;
 }
 Line *line_insert(Line *prev, Line *next) {
 	Line *line = (Line *)xmalloc(sizeof(Line));
