@@ -4,7 +4,6 @@
 #define PREFERRED_COL_UNSET ((size_t)-1)
 static size_t desired_rx = PREFERRED_COL_UNSET;
 static void maybe_reset_modified(void);
-static bool_t buffer_matches_saved_file(void);
 static void delete_char(void);
 static void delete_empty_line(void);
 static void break_line(void);
@@ -168,18 +167,22 @@ void edit_fix_cursor_x(void) {
 	if (editor.file.cursor.x > len)
 		editor.file.cursor.x = len;
 }
-void edit_insert(const unsigned char *s) {
-	size_t s_len = strlen((const char *)s);
-	line_insert_str(
+void edit_insert_n(const unsigned char *s, size_t s_len) {
+	if (s_len == 0) return;
+	line_insert_n_str(
 		editor.file.buffer.curr,
 		mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x),
-		s
+		s,
+		s_len
 	);
 	editor.file.is_modified = TRUE;
 	maybe_reset_modified();
 	editor.file.cursor.x += index_to_mbnum(s, s_len);
 	editor.file.cursor.rx = cursor_x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
+}
+void edit_insert(const unsigned char *s) {
+	edit_insert_n(s, strlen((const char *)s));
 }
 void edit_backspace(void) {
 	bool_t changed = FALSE;
@@ -215,7 +218,7 @@ void edit_enter(void) {
 		unsigned char *indent = (unsigned char *)xmalloc(indent_end + 1);
 		memcpy(indent, prev_line->s, indent_end);
 		indent[indent_end] = '\0';
-		line_insert_str(editor.file.buffer.curr, 0, indent);
+		line_insert_n_str(editor.file.buffer.curr, 0, indent, indent_end);
 		free(indent);
 	}
 	editor.file.cursor.x = index_to_mbnum(editor.file.buffer.curr->s, indent_end);
@@ -244,9 +247,10 @@ static void delete_empty_line(void) {
 }
 static void break_line(void) {
 	size_t at = mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x);
-	unsigned char *line_content = (unsigned char *)xmalloc(editor.file.buffer.curr->len - at + 1);
-	memmove(line_content, editor.file.buffer.curr->s + at, editor.file.buffer.curr->len - at + 1);
-	line_insert_str(editor.file.buffer.curr->next, 0, line_content);
+	size_t len_to_move = editor.file.buffer.curr->len - at;
+	unsigned char *line_content = (unsigned char *)xmalloc(len_to_move + 1);
+	memmove(line_content, editor.file.buffer.curr->s + at, len_to_move + 1);
+	line_insert_n_str(editor.file.buffer.curr->next, 0, line_content, len_to_move);
 	line_delete_str(editor.file.buffer.curr, at, editor.file.buffer.curr->len - at);
 	free(line_content);
 }
@@ -254,7 +258,7 @@ static void join_with_prev_line(void) {
 	Line *current_line = editor.file.buffer.curr;
 	Line *prev_line = current_line->prev;
 	editor.file.cursor.x = line_mblen(prev_line);
-	line_insert_str(prev_line, prev_line->len, current_line->s);
+	line_insert_n_str(prev_line, prev_line->len, current_line->s, current_line->len);
 	editor.file.buffer.curr = prev_line;
 	--editor.file.cursor.y;
 	buf_delete_line(&editor.file.buffer, current_line);
@@ -264,11 +268,11 @@ void edit_process_key(void) {
 	unsigned char *s;
 	size_t len = term_read(&s, &special_key);
 	if (len != 0) {
-		edit_insert(s);
+		edit_insert_n(s, len);
 	} else {
 		switch (special_key) {
 		case BACKSPACE: edit_backspace(); break;
-		case TAB: edit_insert((unsigned char*)"\t"); break;
+		case TAB: edit_insert_n((unsigned char*)"\t", 1); break;
 		case ENTER: edit_enter(); break;
 		case HOME: edit_move_home(); break;
 		case END: edit_move_end(); break;
@@ -296,66 +300,8 @@ static void maybe_reset_modified(void) {
 	if (editor.file.buffer.num_lines == 1 && editor.file.buffer.begin->len == 0) {
 		if (editor.file.path[0] == '\0' || !is_file_exist(editor.file.path)) {
 			editor.file.is_modified = FALSE;
-			return;
 		}
 	}
-	if (editor.file.is_modified && buffer_matches_saved_file()) {
-		editor.file.is_modified = FALSE;
-	}
-}
-static bool_t buffer_matches_saved_file(void) {
-	FILE *f;
-	Line *line;
-	char *disk_buf = NULL;
-	long file_size;
-	bool_t match = TRUE;
-	if (editor.file.path[0] == '\0') return FALSE;
-	f = fopen(editor.file.path, "rb");
-	if (!f) return FALSE;
-	fseek(f, 0, SEEK_END);
-	file_size = ftell(f);
-	fseek(f, 0, SEEK_SET);
-	if (file_size < 0) {
-		fclose(f);
-		return FALSE;
-	}
-	if (file_size == 0) {
-		fclose(f);
-		return editor.file.buffer.num_lines == 1 && editor.file.buffer.begin->len == 0;
-	}
-	disk_buf = (char *)xmalloc(file_size);
-	if (fread(disk_buf, 1, file_size, f) != (size_t)file_size) {
-		free(disk_buf);
-		fclose(f);
-		return FALSE;
-	}
-	fclose(f);
-	char *p = disk_buf;
-	char *end = disk_buf + file_size;
-	line = editor.file.buffer.begin;
-	while (line && p < end) {
-		char *next_p = (char *)memchr(p, '\n', end - p);
-		size_t disk_line_len = next_p ? (size_t)(next_p - p) : (size_t)(end - p);
-		if (disk_line_len > 0 && p[disk_line_len - 1] == '\r') {
-			disk_line_len--;
-		}
-		if (line->len != disk_line_len || memcmp(line->s, p, disk_line_len) != 0) {
-			match = FALSE;
-			break;
-		}
-		p = next_p ? next_p + 1 : end;
-		line = line->next;
-	}
-	if (match) {
-		while (p < end && (*p == '\r' || *p == '\n')) {
-			p++;
-		}
-		if (line || p < end) {
-			match = FALSE;
-		}
-	}
-	free(disk_buf);
-	return match;
 }
 static bool_t is_blank(Line *line) { return line->len == 0; }
 void edit_move_prev_paragraph(void) {

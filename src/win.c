@@ -209,9 +209,9 @@ bool_t is_file_exist(char *filename) {
 		!(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 }
 void file_canonicalize_path(const char *path, char *out_path, size_t out_size) {
-	if (GetLongPathNameA(path, out_path, (DWORD)out_size) == 0) {
-		strncpy(out_path, path, out_size -1);
-		out_path[out_size-1] = '\0';
+	if (GetFullPathNameA(path, (DWORD)out_size, out_path, NULL) == 0) {
+		strncpy(out_path, path, out_size - 1);
+		out_path[out_size - 1] = '\0';
 	}
 }
 static void write_console_wide(const wchar_t *ws, size_t wlen) {
