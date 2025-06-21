@@ -24,8 +24,9 @@ static void init(char *file_path) {
 	file_init(&editor.file);
 	if (file_path) {
 		char canonical_path[4096];
+		size_t len;
 		fs_canonicalize(file_path, canonical_path, sizeof(canonical_path));
-		size_t len = strlen(canonical_path);
+		len = strlen(canonical_path);
 		if (len + 1 > editor.file.cap) {
 			editor.file.cap = len + 1;
 			editor.file.path = (char *)xrealloc(editor.file.path, editor.file.cap);

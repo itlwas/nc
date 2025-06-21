@@ -21,7 +21,9 @@ void file_free(File *file) {
 }
 void file_load(File *file) {
 	FILE *f;
-	char *buf, *p, *end;
+	char *buf;
+	char *p;
+	char *end;
 	long file_size;
 	bool_t first_line = TRUE;
 	f = fopen(file->path, "rb");
@@ -37,8 +39,8 @@ void file_load(File *file) {
 		fclose(f);
 		return;
 	}
-	buf = (char *)xmalloc(file_size);
-	if (fread(buf, 1, file_size, f) != (size_t)file_size) {
+	buf = (char *)xmalloc((size_t)file_size);
+	if (fread(buf, 1, (size_t)file_size, f) != (size_t)file_size) {
 		free(buf);
 		fclose(f);
 		die("fread");
@@ -47,7 +49,7 @@ void file_load(File *file) {
 	p = buf;
 	end = buf + file_size;
 	while (p <= end) {
-		char *next_nl = (char *)memchr(p, '\n', end - p);
+		char *next_nl = (char *)memchr(p, '\n', (size_t)(end - p));
 		size_t line_len = next_nl ? (size_t)(next_nl - p) : (size_t)(end - p);
 		if (line_len > 0 && p[line_len - 1] == '\r') line_len--;
 		if (first_line) {
@@ -67,9 +69,9 @@ void file_load(File *file) {
 }
 void file_save(File *file) {
 	FILE *f = fopen(file->path, "w");
+	Line *line;
 	if (!f) die("fopen");
 	setvbuf(f, NULL, _IOFBF, 65536);
-	Line *line;
 	for (line = file->buffer.begin; line; line = line->next) {
 		fputs((char *)line->s, f);
 		if (line->next || line->len != 0) fputc('\n', f);
@@ -107,7 +109,7 @@ void file_quit_prompt(void) {
 		const char *name = editor.file.path[0] ? editor.file.path : "[No Name]";
 		snprintf(prompt, sizeof(prompt), "Save changes to %s before closing? (y,n,esc): ", name);
 		if (status_input(input, prompt, NULL)) {
-			char answer = tolower((unsigned char)input->s[0]);
+			int answer = tolower((unsigned char)input->s[0]);
 			if (answer == 'y') {
 				if (!file_save_prompt()) {
 					line_free(input);

@@ -65,12 +65,16 @@ static void render_rows(void) {
 	bool_t scrollbar = (editor.file.buffer.num_lines > editor.rows);
 	size_t bar_height = 0;
 	size_t bar_start = 0;
+	size_t total_lines = 0;
+	size_t scroll_pos = 0;
+	size_t max_scroll_pos = 0;
+	size_t avail_cols;
 	if (scrollbar) {
-		size_t total_lines = editor.file.buffer.num_lines;
+		total_lines = editor.file.buffer.num_lines;
 		bar_height = (editor.rows * editor.rows) / total_lines;
 		if (bar_height == 0) bar_height = 1;
-		size_t scroll_pos = editor.window.y;
-		size_t max_scroll_pos = total_lines - editor.rows;
+		scroll_pos = editor.window.y;
+		max_scroll_pos = total_lines - editor.rows;
 		if (scroll_pos > max_scroll_pos) {
 			scroll_pos = max_scroll_pos;
 		}
@@ -83,10 +87,10 @@ static void render_rows(void) {
 	}
 	if (!rowbuf)
 		ensure_screen_buffer();
-	const size_t avail_cols = editor.cols - (scrollbar ? 1 : 0);
+	avail_cols = editor.cols - (scrollbar ? 1 : 0);
 	for (y = 0; y < editor.rows; ++y) {
-		rowbuf[0] = '\0';
 		size_t row_len = 0;
+		rowbuf[0] = '\0';
 		if (line && show_line_numbers) {
 			size_t lnum = editor.window.y + y + 1;
 			row_len = (size_t)snprintf(rowbuf, rowbuf_cap, " %*lu ", (int)digits, (unsigned long)lnum);
@@ -94,10 +98,13 @@ static void render_rows(void) {
 		if (!line) {
 			if (y == editor.rows / 3 && editor.file.buffer.num_lines == 1 && editor.file.buffer.begin->len == 0) {
 				char msg[32];
+				size_t welcomelen;
+				size_t padding;
+				size_t pos;
 				snprintf(msg, sizeof(msg), "yoc ~ %s", YOC_VERSION);
-				size_t welcomelen = strlen(msg);
-				size_t padding = (avail_cols - (size_t)welcomelen) / 2;
-				size_t pos = 0;
+				welcomelen = strlen(msg);
+				padding = (avail_cols - (size_t)welcomelen) / 2;
+				pos = 0;
 				if (padding) {
 					rowbuf[pos++] = '~';
 					--padding;
@@ -105,7 +112,7 @@ static void render_rows(void) {
 				while (padding-- > 0 && pos < avail_cols)
 					rowbuf[pos++] = ' ';
 				if (pos + (size_t)welcomelen > avail_cols)
-					welcomelen = (int)(avail_cols - pos);
+					welcomelen = (size_t)(avail_cols - pos);
 				memcpy(rowbuf + pos, msg, (size_t)welcomelen);
 				pos += (size_t)welcomelen;
 				rowbuf[pos] = '\0';

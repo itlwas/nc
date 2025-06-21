@@ -204,14 +204,16 @@ void edit_backspace(void) {
 }
 void edit_enter(void) {
 	Line *prev_line = editor.file.buffer.curr;
+	size_t indent_end;
+	size_t cursor_pos_bytes;
 	line_new(prev_line, prev_line->next);
 	editor.file.buffer.num_lines++;
 	if (editor.file.cursor.x < line_get_mblen(prev_line))
 		break_line();
 	editor.file.buffer.curr = prev_line->next;
 	++editor.file.cursor.y;
-	size_t indent_end = find_first_nonblank(prev_line->s);
-	size_t cursor_pos_bytes = mbnum_to_index(prev_line->s, editor.file.cursor.x);
+	indent_end = find_first_nonblank(prev_line->s);
+	cursor_pos_bytes = mbnum_to_index(prev_line->s, editor.file.cursor.x);
 	if (cursor_pos_bytes < indent_end)
 		indent_end = cursor_pos_bytes;
 	if (indent_end > 0) {
@@ -229,10 +231,12 @@ void edit_enter(void) {
 	render_scroll();
 }
 static void delete_char(void) {
+	size_t start;
+	size_t char_len;
 	if (editor.file.cursor.x == 0)
 		return;
-	size_t start = mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x - 1);
-	size_t char_len = utf8_len(editor.file.buffer.curr->s[start]);
+	start = mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x - 1);
+	char_len = utf8_len(editor.file.buffer.curr->s[start]);
 	if (char_len == 0 || start + char_len > editor.file.buffer.curr->len)
 		char_len = 1;
 	line_del_str(editor.file.buffer.curr, start, char_len);
@@ -303,12 +307,16 @@ static void maybe_reset_modified(void) {
 		}
 	}
 }
-static bool_t is_blank(Line *line) { return line->len == 0; }
+static bool_t is_blank(Line *line) {
+	return line->len == 0;
+}
 void edit_move_prev_para(void) {
+	Line *line;
+	size_t y;
 	if (editor.file.cursor.y == 0)
 		return;
-	Line *line = editor.file.buffer.curr;
-	size_t y = editor.file.cursor.y;
+	line = editor.file.buffer.curr;
+	y = editor.file.cursor.y;
 	while (y > 0 && is_blank(line)) {
 		line = line->prev;
 		--y;
@@ -324,10 +332,12 @@ void edit_move_prev_para(void) {
 	render_scroll();
 }
 void edit_move_next_para(void) {
+	Line *line;
+	size_t y;
 	if (editor.file.cursor.y >= editor.file.buffer.num_lines - 1)
 		return;
-	Line *line = editor.file.buffer.curr;
-	size_t y = editor.file.cursor.y;
+	line = editor.file.buffer.curr;
+	y = editor.file.cursor.y;
 	while (y < editor.file.buffer.num_lines - 1 && !is_blank(line)) {
 		line = line->next;
 		++y;

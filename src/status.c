@@ -144,33 +144,35 @@ static void status_realloc(size_t len) {
 }
 static void status_set_default(void) {
 	const char *path;
-	int left_len;
+	size_t left_len;
 	char right_str[32];
-	int right_len;
-	int fill_len;
+	size_t right_len;
+	size_t fill_len;
 	status_realloc(editor.cols + 1);
 	path = editor.file.path[0] ? extract_filename(editor.file.path) : "[No Name]";
 	if (editor.file.is_modified && editor.file.path[0] != '\0')
-		left_len = snprintf(editor.file.status.msg, editor.file.status.cap, "%s [+]", path);
+		left_len = (size_t)snprintf(editor.file.status.msg, editor.file.status.cap, "%s [+]", path);
 	else
-		left_len = snprintf(editor.file.status.msg, editor.file.status.cap, "%s", path);
-	right_len = snprintf(right_str, sizeof(right_str), "%zu:%zu", editor.file.cursor.y + 1, editor.file.cursor.rx + 1);
-	if ((size_t)(left_len + right_len + 1) > editor.cols) {
-		left_len = editor.cols - right_len - 1;
-		if (left_len < 0) left_len = 0;
+		left_len = (size_t)snprintf(editor.file.status.msg, editor.file.status.cap, "%s", path);
+	right_len = (size_t)snprintf(right_str, sizeof(right_str), "%lu:%lu", (unsigned long)(editor.file.cursor.y + 1), (unsigned long)(editor.file.cursor.rx + 1));
+	if (left_len + right_len + 1 > editor.cols) {
+		if (editor.cols > right_len + 1)
+			left_len = editor.cols - right_len - 1;
+		else
+			left_len = 0;
 	}
 	editor.file.status.msg[left_len] = '\0';
 	fill_len = editor.cols - left_len - right_len;
-	if (fill_len < 0) fill_len = 0;
 	memset(editor.file.status.msg + left_len, ' ', fill_len);
-	memcpy(editor.file.status.msg + left_len + fill_len, right_str, (size_t)right_len + 1);
+	memcpy(editor.file.status.msg + left_len + fill_len, right_str, right_len + 1);
 	editor.file.status.len = left_len + fill_len + right_len;
 }
 static void status_do_insert(unsigned char *s) {
 	size_t str_len = strlen((const char *)s);
+	size_t chars;
 	if (str_len == 0)
 		return;
-	size_t chars = index_to_mbnum(s, str_len);
+	chars = index_to_mbnum(s, str_len);
 	line_insert_str(statin->input, mbnum_to_index(statin->input->s, statin->cx), s);
 	statin->cx += chars;
 }
@@ -189,10 +191,12 @@ static void status_do_arrow_right(void) {
 		++statin->cx;
 }
 static void status_do_backspace(void) {
+	size_t start;
+	size_t char_len;
 	if (statin->input->len == 0 || statin->cx == 0)
 		return;
-	size_t start = mbnum_to_index(statin->input->s, statin->cx - 1);
-	size_t char_len = utf8_len(statin->input->s[start]);
+	start = mbnum_to_index(statin->input->s, statin->cx - 1);
+	char_len = utf8_len(statin->input->s[start]);
 	if (char_len == 0 || start + char_len > statin->input->len)
 		char_len = 1;
 	line_del_str(statin->input, start, char_len);

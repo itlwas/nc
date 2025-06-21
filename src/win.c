@@ -42,12 +42,12 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 			*n = new_size;
 			*lineptr = new_ptr;
 		}
-		((unsigned char *)(*lineptr))[pos++] = c;
+		((unsigned char *)(*lineptr))[pos++] = (unsigned char)c;
 		if (c == '\n') break;
 		c = fgetc(stream);
 	}
 	(*lineptr)[pos] = '\0';
-	return pos;
+	return (ssize_t)pos;
 }
 void term_write(const unsigned char *s, size_t len) {
 	int required;
@@ -105,8 +105,8 @@ void term_get_win_size(size_t *x, size_t *y) {
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	if (!GetConsoleScreenBufferInfo(hOut, &csbi))
 		die("GetConsoleScreenBufferInfo");
-	if (x) *x = csbi.srWindow.Right - csbi.srWindow.Left + 1;
-	if (y) *y = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+	if (x) *x = (size_t)(csbi.srWindow.Right - csbi.srWindow.Left + 1);
+	if (y) *y = (size_t)(csbi.srWindow.Bottom - csbi.srWindow.Top + 1);
 }
 void term_clear_line(void) {
 	DWORD cCharsWritten;
@@ -116,9 +116,9 @@ void term_clear_line(void) {
 		die("GetConsoleScreenBufferInfo");
 	coordScreen.X = 0;
 	coordScreen.Y = csbi.dwCursorPosition.Y;
-	if (!FillConsoleOutputCharacter(hOut, (TCHAR)' ', csbi.dwSize.X, coordScreen, &cCharsWritten))
+	if (!FillConsoleOutputCharacter(hOut, (TCHAR)' ', (DWORD)csbi.dwSize.X, coordScreen, &cCharsWritten))
 		die("FillConsoleOutputCharacter");
-	if (!FillConsoleOutputAttribute(hOut, csbi.wAttributes, csbi.dwSize.X, coordScreen, &cCharsWritten))
+	if (!FillConsoleOutputAttribute(hOut, csbi.wAttributes, (DWORD)csbi.dwSize.X, coordScreen, &cCharsWritten))
 		die("FillConsoleOutputAttribute");
 	if (!SetConsoleCursorPosition(hOut, coordScreen))
 		die("SetConsoleCursorPosition");
@@ -129,7 +129,7 @@ void term_clear_screen(void) {
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	if (!GetConsoleScreenBufferInfo(hOut, &csbi))
 		die("GetConsoleScreenBufferInfo");
-	dwConSize = csbi.dwSize.X * csbi.dwSize.Y;
+	dwConSize = (DWORD)csbi.dwSize.X * (DWORD)csbi.dwSize.Y;
 	if (!FillConsoleOutputCharacter(hOut, (TCHAR)' ', dwConSize, coordScreen, &cCharsWritten))
 		die("FillConsoleOutputCharacter");
 	if (!FillConsoleOutputAttribute(hOut, csbi.wAttributes, dwConSize, coordScreen, &cCharsWritten))
@@ -152,7 +152,7 @@ void term_enable_raw(void) {
 	atexit(term_disable_raw);
 	if (!GetConsoleMode(hIn, &mode))
 		die("GetConsoleMode");
-	if (!(SetConsoleMode(hIn, mode & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT))))
+	if (!(SetConsoleMode(hIn, mode & (DWORD)~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT))))
 		die("SetConsoleMode");
 }
 void term_switch_to_norm(void) {
@@ -208,12 +208,12 @@ static void write_console_wide(const wchar_t *ws, size_t wlen) {
 		die("WriteConsoleW");
 }
 static wchar_t get_wch(int *special_key) {
-	*special_key = 0;
 	INPUT_RECORD input;
 	DWORD nread;
-	wchar_t retval = '\0';
+	wchar_t retval = L'\0';
 	WORD keycode;
 	WORD unicode;
+	*special_key = 0;
 	do {
 		if (!ReadConsoleInputW(hIn, &input, 1, &nread))
 			die("ReadConsoleInputW");

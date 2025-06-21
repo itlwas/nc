@@ -13,8 +13,10 @@ static size_t calc_capacity(size_t current, size_t required) {
 }
 static void line_reserve(Line *line, size_t additional) {
 	size_t required = line->len + additional + 1;
-	if (required <= line->cap) return;
-	size_t new_cap = calc_capacity(line->cap, required);
+	size_t new_cap;
+	if (required <= line->cap)
+		return;
+	new_cap = calc_capacity(line->cap, required);
 	if (line->s == line->inline_space) {
 		unsigned char *heap_mem = (unsigned char *)xmalloc(new_cap);
 		memcpy(heap_mem, line->s, line->len + 1);
@@ -36,7 +38,8 @@ void buf_free(Buffer *buffer) {
 	}
 }
 void buf_del_line(Buffer *buffer, Line *line) {
-	if (!buffer || !line) return;
+	if (!buffer || !line)
+		return;
 	if (line->prev)
 		line->prev->next = line->next;
 	if (line->next)
@@ -67,8 +70,10 @@ Line *line_new(Line *prev, Line *next) {
 	line->mb_len = LINE_MBLEN_UNCACHED;
 	line->prev = prev;
 	line->next = next;
-	if (prev) prev->next = line;
-	if (next) next->prev = line;
+	if (prev)
+		prev->next = line;
+	if (next)
+		next->prev = line;
 	return line;
 }
 void line_del(Line *line) {
