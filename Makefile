@@ -1,17 +1,40 @@
-.PHONY: build clean
+.SUFFIXES:
+MAKEFLAGS += --warn-undefined-variables --no-builtin-rules
+.PHONY: all build release debug clean
 CC ?= gcc
-CFLAGS := -Iinclude -std=c89 -D_FILE_OFFSET_BITS=64 -Wall -Wextra -pipe -Os -ffunction-sections -fdata-sections
-SRC := main edit render status buf file utf8 mem
+AR ?= ar
+INSTALL ?= install
+RM ?= rm -f
+MKDIR_P ?= mkdir -p
+PROJECT := yoc
+VERSION := 0.0.1
 PLAT := $(if $(filter Windows_NT,$(OS)),win,unix)
-OBJ := $(addprefix obj/,$(SRC:=.o) $(PLAT).o)
-OUT := yoc$(if $(filter Windows_NT,$(OS)),.exe,)
+SRC_COMMON := main edit render status buf file utf8 mem
+SRC := $(SRC_COMMON) $(PLAT)
+OBJ := $(addprefix obj/,$(SRC:=.o))
+DEP := $(OBJ:.o=.d)
+OUT := $(PROJECT)$(if $(filter Windows_NT,$(OS)),.exe,)
+WARNFLAGS := -Wall -Wextra -pedantic -Wshadow -Wconversion
+OPTFLAGS := -Os
+CSTD := -std=c89
+CPPFLAGS := -Iinclude -D_FILE_OFFSET_BITS=64
+CFLAGS += $(CSTD) $(CPPFLAGS) $(WARNFLAGS) $(OPTFLAGS) -pipe -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections -s
+DEBUG_FLAGS := -O0 -g -DDEBUG
+RELEASE_FLAGS := -DNDEBUG
+all: release
+release: CFLAGS += $(RELEASE_FLAGS)
+release: build
+debug: CFLAGS += $(DEBUG_FLAGS)
+debug: LDFLAGS +=
+debug: build
 build: $(OUT)
 $(OUT): $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 obj/%.o: src/%.c | obj
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
 obj:
-	mkdir -p obj
+	$(MKDIR_P) $@
+-include $(DEP)
 clean:
-	rm -rf $(OUT) obj
+	$(RM) -r obj $(OUT)
