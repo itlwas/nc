@@ -102,7 +102,7 @@ size_t cursor_x_to_rx(Line *line, size_t x) {
 	size_t i;
 	for (i = 0; i < pos;) {
 		if (line->s[i] == '\t') {
-			rx += editor.tabsize - rx % editor.tabsize;
+			rx += editor.tabsize - (rx & (editor.tabsize - 1));
 			i += 1;
 			continue;
 		}
@@ -130,7 +130,7 @@ size_t rx_to_cursor_x(Line *line, size_t rx_target) {
 		if (rx >= rx_target)
 			break;
 		if (line->s[pos] == '\t') {
-			size_t ts = editor.tabsize - (rx % editor.tabsize);
+			size_t ts = editor.tabsize - (rx & (editor.tabsize - 1));
 			if (rx + ts > rx_target)
 				break;
 			rx += ts;
@@ -170,7 +170,7 @@ size_t length_to_width(const unsigned char *s, size_t len) {
 	while (i < len) {
 		unsigned char c = s[i];
 		if (c == '\t') {
-			col += editor.tabsize - col % editor.tabsize;
+			col += editor.tabsize - (col & (editor.tabsize - 1));
 			++i;
 			continue;
 		}

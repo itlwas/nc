@@ -1,13 +1,10 @@
 #include "yoc.h"
 #include <string.h>
 static const char *extract_filename(const char *path) {
-	const char *basename = path;
-	while (*path) {
-		if (*path == '/' || *path == '\\')
-			basename = path + 1;
-		path++;
-	}
-	return basename;
+	const char *slash = strrchr(path, '/');
+	const char *backslash = strrchr(path, '\\');
+	const char *sep = (slash > backslash) ? slash : backslash;
+	return sep ? sep + 1 : path;
 }
 typedef struct {
 	size_t cx;

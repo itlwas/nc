@@ -120,7 +120,7 @@ static void render_rows(void) {
 				unsigned char c = s[i];
 				size_t char_len = 1;
 				if (c == '\t') {
-					size_t spaces_to_add = editor.tabsize - (width % editor.tabsize);
+					size_t spaces_to_add = editor.tabsize - (width & (editor.tabsize - 1));
 					size_t k;
 					for (k = 0; k < spaces_to_add; ++k) {
 						if (width >= editor.window.x && pos < editor.cols * MAXCHARLEN)

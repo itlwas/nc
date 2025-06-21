@@ -20,29 +20,50 @@ void file_free(File *file) {
 	status_free();
 }
 void file_load(File *file) {
-	char *line = NULL;
-	size_t len = 0;
-	ssize_t read;
-	FILE *f = fopen(file->path, "r");
+	FILE *f;
+	char *buf, *p, *end;
+	long file_size;
+	bool_t first_line = TRUE;
+	f = fopen(file->path, "rb");
 	if (!f) die("fopen");
-	setvbuf(f, NULL, _IOFBF, 65536);
-	read = getline(&line, &len, f);
-	if (read != -1) {
-		while (read > 0 && (line[read - 1] == '\n' || line[read - 1] == '\r'))
-			line[--read] = '\0';
-		line_insert_str(file->buffer.curr, 0, (unsigned char *)line);
+	fseek(f, 0, SEEK_END);
+	file_size = ftell(f);
+	fseek(f, 0, SEEK_SET);
+	if (file_size < 0) {
+		fclose(f);
+		die("ftell");
 	}
-	while ((read = getline(&line, &len, f)) != -1) {
-		while (read > 0 && (line[read - 1] == '\n' || line[read - 1] == '\r'))
-			line[--read] = '\0';
-		line_insert(file->buffer.curr, file->buffer.curr->next);
-		file->buffer.curr = file->buffer.curr->next;
-		line_insert_str(file->buffer.curr, 0, (unsigned char *)line);
-		file->buffer.num_lines++;
+	if (file_size == 0) {
+		fclose(f);
+		return;
+	}
+	buf = (char *)xmalloc(file_size);
+	if (fread(buf, 1, file_size, f) != (size_t)file_size) {
+		free(buf);
+		fclose(f);
+		die("fread");
+	}
+	fclose(f);
+	p = buf;
+	end = buf + file_size;
+	while (p <= end) {
+		char *next_nl = (char *)memchr(p, '\n', end - p);
+		size_t line_len = next_nl ? (size_t)(next_nl - p) : (size_t)(end - p);
+		if (line_len > 0 && p[line_len - 1] == '\r') line_len--;
+		if (first_line) {
+			line_insert_n_str(file->buffer.curr, 0, (unsigned char *)p, line_len);
+			first_line = FALSE;
+		} else {
+			line_insert(file->buffer.curr, file->buffer.curr->next);
+			file->buffer.curr = file->buffer.curr->next;
+			file->buffer.num_lines++;
+			line_insert_n_str(file->buffer.curr, 0, (unsigned char *)p, line_len);
+		}
+		if (!next_nl) break;
+		p = next_nl + 1;
 	}
 	file->buffer.curr = file->buffer.begin;
-	free(line);
-	fclose(f);
+	free(buf);
 }
 void file_save(File *file) {
 	FILE *f = fopen(file->path, "w");
@@ -51,8 +72,7 @@ void file_save(File *file) {
 	Line *line;
 	for (line = file->buffer.begin; line; line = line->next) {
 		fputs((char *)line->s, f);
-		if (line->next || line->len != 0)
-			fputc('\n', f);
+		if (line->next || line->len != 0) fputc('\n', f);
 	}
 	fclose(f);
 }

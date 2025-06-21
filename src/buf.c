@@ -123,6 +123,20 @@ void line_insert_str(Line *line, size_t at, const unsigned char *str) {
 	line->width = LINE_WIDTH_UNCACHED;
 	line->mb_len = LINE_MBLEN_UNCACHED;
 }
+void line_insert_n_str(Line *line, size_t at, const unsigned char *str, size_t len) {
+	if (len == 0)
+		return;
+	if (at > line->len)
+		at = line->len;
+	line_reserve(line, len);
+	if (at < line->len)
+		memmove(line->s + at + len, line->s + at, line->len - at + 1);
+	memcpy(line->s + at, str, len);
+	line->len += len;
+	line->s[line->len] = '\0';
+	line->width = LINE_WIDTH_UNCACHED;
+	line->mb_len = LINE_MBLEN_UNCACHED;
+}
 void line_delete_str(Line *line, size_t at, size_t len) {
 	if (len == 0 || at >= line->len)
 		return;
