@@ -201,8 +201,8 @@ static void status_do_backspace(void) {
 		char_len = 1;
 	line_del_str(statin->input, start, char_len);
 	--statin->cx;
-	if (statin->charsoff > 0)
-		--statin->charsoff;
+	if (statin->cx < statin->charsoff)
+		statin->charsoff = statin->cx;
 }
 static void status_input_init(void) {
 	statin = (StatusInput *)xmalloc(sizeof(StatusInput));
