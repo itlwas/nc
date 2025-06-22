@@ -10,14 +10,9 @@ static void break_line(void);
 static void join_with_prev_line(void);
 static bool_t is_blank(Line *line);
 void edit_move_home(void) {
-	size_t pos = find_first_nonblank(editor.file.buffer.curr->s);
-	size_t fn_x = index_to_mbnum(editor.file.buffer.curr->s, pos);
-	if (pos < editor.file.buffer.curr->len && editor.file.cursor.x != fn_x)
-		editor.file.cursor.x = fn_x;
-	else
-		editor.file.cursor.x = 0;
-	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
-	desired_rx = editor.file.cursor.rx;
+	editor.file.cursor.x = 0;
+	editor.file.cursor.rx = 0;
+	desired_rx = 0;
 }
 void edit_move_end(void) {
 	editor.file.cursor.x = line_get_mblen(editor.file.buffer.curr);

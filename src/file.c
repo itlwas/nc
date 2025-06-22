@@ -53,10 +53,16 @@ void file_save(File *file) {
 	Line *line;
 	if (!f) die("fopen");
 	setvbuf(f, NULL, _IOFBF, 65536);
-	for (line = file->buffer.begin; line; line = line->next) {
-		fputs((char *)line->s, f);
-		if (line->next || line->len != 0) fputc('\n', f);
+	if (file->buffer.num_lines == 1 && file->buffer.begin->len == 0) {
+		fclose(f);
+		return;
 	}
+	for (line = file->buffer.begin; line; line = line->next) {
+		fwrite(line->s, 1, line->len, f);
+		if (line->next)
+			fputc('\n', f);
+	}
+	fputc('\n', f);
 	fclose(f);
 }
 bool_t file_save_prompt(void) {
