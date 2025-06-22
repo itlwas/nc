@@ -26,40 +26,24 @@ void edit_move_end(void) {
 }
 void edit_move_up(void) {
 	if (editor.file.cursor.y > 0) {
-		bool_t start_of_line = (editor.file.cursor.x == 0);
 		if (desired_rx == PREFERRED_COL_UNSET)
 			desired_rx = editor.file.cursor.rx;
 		editor.file.buffer.curr = editor.file.buffer.curr->prev;
 		--editor.file.cursor.y;
 		editor.file.cursor.x = rx_to_x(editor.file.buffer.curr, desired_rx);
 		edit_fix_cursor_x();
-		if (start_of_line) {
-			size_t fn = find_first_nonblank(editor.file.buffer.curr->s);
-			size_t fn_x = index_to_mbnum(editor.file.buffer.curr->s, fn);
-			if (fn_x > 0)
-				editor.file.cursor.x = fn_x;
-			editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
-			desired_rx = editor.file.cursor.rx;
-		}
+		editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	}
 }
 void edit_move_down(void) {
 	if (editor.file.cursor.y < editor.file.buffer.num_lines - 1) {
-		bool_t start_of_line = (editor.file.cursor.x == 0);
 		if (desired_rx == PREFERRED_COL_UNSET)
 			desired_rx = editor.file.cursor.rx;
 		editor.file.buffer.curr = editor.file.buffer.curr->next;
 		++editor.file.cursor.y;
 		editor.file.cursor.x = rx_to_x(editor.file.buffer.curr, desired_rx);
 		edit_fix_cursor_x();
-		if (start_of_line) {
-			size_t fn = find_first_nonblank(editor.file.buffer.curr->s);
-			size_t fn_x = index_to_mbnum(editor.file.buffer.curr->s, fn);
-			if (fn_x > 0)
-				editor.file.cursor.x = fn_x;
-			editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
-			desired_rx = editor.file.cursor.rx;
-		}
+		editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	}
 }
 void edit_move_left(void) {

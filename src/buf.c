@@ -56,9 +56,9 @@ void buf_del_line(Buffer *buffer, Line *line) {
 	if (buffer->num_lines == 0) {
 		buffer->begin = buffer->curr = line_new(NULL, NULL);
 		buffer->num_lines = 1;
-	}
-	if (!buffer->curr)
+	} else if (!buffer->curr) {
 		buffer->curr = buffer->begin;
+	}
 }
 Line *line_new(Line *prev, Line *next) {
 	Line *line = (Line *)xmalloc(sizeof(Line));

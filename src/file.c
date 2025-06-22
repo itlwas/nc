@@ -21,51 +21,32 @@ void file_free(File *file) {
 }
 void file_load(File *file) {
 	FILE *f;
-	char *buf;
-	char *p;
-	char *end;
-	long file_size;
+	char *line = NULL;
+	size_t line_cap = 0;
+	ssize_t line_len;
 	bool_t first_line = TRUE;
 	f = fopen(file->path, "rb");
 	if (!f) die("fopen");
-	fseek(f, 0, SEEK_END);
-	file_size = ftell(f);
-	fseek(f, 0, SEEK_SET);
-	if (file_size < 0) {
-		fclose(f);
-		die("ftell");
-	}
-	if (file_size == 0) {
-		fclose(f);
-		return;
-	}
-	buf = (char *)xmalloc((size_t)file_size);
-	if (fread(buf, 1, (size_t)file_size, f) != (size_t)file_size) {
-		free(buf);
-		fclose(f);
-		die("fread");
-	}
-	fclose(f);
-	p = buf;
-	end = buf + file_size;
-	while (p <= end) {
-		char *next_nl = (char *)memchr(p, '\n', (size_t)(end - p));
-		size_t line_len = next_nl ? (size_t)(next_nl - p) : (size_t)(end - p);
-		if (line_len > 0 && p[line_len - 1] == '\r') line_len--;
+	while ((line_len = getline(&line, &line_cap, f)) != -1) {
+		if (line_len > 0 && line[line_len - 1] == '\n') {
+			line_len--;
+		}
+		if (line_len > 0 && line[line_len - 1] == '\r') {
+			line_len--;
+		}
 		if (first_line) {
-			line_insert_strn(file->buffer.curr, 0, (unsigned char *)p, line_len);
+			line_insert_strn(file->buffer.curr, 0, (unsigned char *)line, (size_t)line_len);
 			first_line = FALSE;
 		} else {
 			line_new(file->buffer.curr, file->buffer.curr->next);
 			file->buffer.curr = file->buffer.curr->next;
 			file->buffer.num_lines++;
-			line_insert_strn(file->buffer.curr, 0, (unsigned char *)p, line_len);
+			line_insert_strn(file->buffer.curr, 0, (unsigned char *)line, (size_t)line_len);
 		}
-		if (!next_nl) break;
-		p = next_nl + 1;
 	}
+	free(line);
+	fclose(f);
 	file->buffer.curr = file->buffer.begin;
-	free(buf);
 }
 void file_save(File *file) {
 	FILE *f = fopen(file->path, "w");

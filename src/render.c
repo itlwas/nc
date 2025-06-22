@@ -227,22 +227,29 @@ static void draw_line(size_t row, const unsigned char *line, size_t len) {
 	i = 0;
 	rx_common = 0;
 	while (i < prev_len && i < len) {
+		size_t char_len, prev_char_len;
 		unsigned char c = (unsigned char)editor.screen_lines[row][i];
-		size_t char_len = utf8_len(c);
-		if (char_len == 0 || i + char_len > prev_len || i + char_len > len) break;
-		if (memcmp(editor.screen_lines[row] + i, line + i, char_len) != 0) break;
-		if (c == '\t')
+		unsigned char new_c = line[i];
+		if (c != new_c) break;
+		if (c == '\t') {
 			rx_common += editor.tabsize - (rx_common % editor.tabsize);
-		else
-			rx_common += 1;
+			i++;
+			continue;
+		}
+		char_len = utf8_len(c);
+		prev_char_len = utf8_len(new_c);
+		if (char_len == 0 || prev_char_len == 0 || char_len != prev_char_len) break;
+		if (i + char_len > prev_len || i + char_len > len) break;
+		if (memcmp(editor.screen_lines[row] + i, line + i, char_len) != 0) break;
+		rx_common += char_display_width(&line[i]);
 		i += char_len;
 	}
 	term_set_cursor(rx_common, row);
 	if (i < len)
 		term_write(line + i, len - i);
-	new_width = str_width(line, len);
-	clear_from = (new_width > rx_common) ? new_width : rx_common;
-	clear_to = editor.cols;
+	new_width = rx_common + length_to_width(line + i, len - i);
+	clear_from = new_width;
+	clear_to = str_width((unsigned char *)editor.screen_lines[row], prev_len);
 	if (clear_from < clear_to)
 		term_write((unsigned char *)spaces, clear_to - clear_from);
 	if (len > editor.cols * MAXCHARLEN)
