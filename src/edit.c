@@ -87,7 +87,6 @@ void edit_move_prev_word(void) {
 	editor.file.cursor.x = index_to_mbnum(editor.file.buffer.curr->s, pos);
 	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
-	render_scroll();
 }
 void edit_move_next_word(void) {
 	size_t pos = mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x);
@@ -110,13 +109,11 @@ void edit_move_next_word(void) {
 	editor.file.cursor.x = index_to_mbnum(editor.file.buffer.curr->s, pos);
 	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
-	render_scroll();
 }
 void edit_move_pgup(void) {
 	size_t y = editor.rows;
 	while (y--) edit_move_up();
 	edit_fix_cursor_x();
-	render_scroll();
 	desired_rx = PREFERRED_COL_UNSET;
 }
 void edit_move_pgdown(void) {
@@ -124,7 +121,6 @@ void edit_move_pgdown(void) {
 	while (y-- && editor.file.cursor.y < editor.file.buffer.num_lines - 1)
 		edit_move_down();
 	edit_fix_cursor_x();
-	render_scroll();
 	desired_rx = PREFERRED_COL_UNSET;
 }
 void edit_move_top(void) {
@@ -203,7 +199,6 @@ void edit_enter(void) {
 	desired_rx = editor.file.cursor.rx;
 	editor.file.is_modified = TRUE;
 	maybe_reset_modified();
-	render_scroll();
 }
 static void delete_char(void) {
 	size_t start;
@@ -303,7 +298,6 @@ void edit_move_prev_para(void) {
 	editor.file.cursor.y = y;
 	edit_move_home();
 	desired_rx = PREFERRED_COL_UNSET;
-	render_scroll();
 }
 void edit_move_next_para(void) {
 	Line *line;
@@ -324,5 +318,4 @@ void edit_move_next_para(void) {
 	editor.file.cursor.y = y;
 	edit_move_home();
 	desired_rx = PREFERRED_COL_UNSET;
-	render_scroll();
 }
