@@ -220,17 +220,18 @@ static wchar_t get_wch(int *special_key) {
 	} while (!(input.EventType == KEY_EVENT && input.Event.KeyEvent.bKeyDown && input.Event.KeyEvent.wVirtualKeyCode));
 	keycode = input.Event.KeyEvent.wVirtualKeyCode;
 	unicode = input.Event.KeyEvent.uChar.UnicodeChar;
-	if (unicode >= CTRL_KEY('a') && unicode <= CTRL_KEY('z')) {
-		*special_key = unicode;
-	} else if (is_ctrl_pressed(&input)) {
-		switch (keycode) {
-		case VK_END: *special_key = CTRL_END; break;
-		case VK_HOME: *special_key = CTRL_HOME; break;
-		case VK_LEFT: *special_key = CTRL_ARROW_LEFT; break;
-		case VK_UP: *special_key = CTRL_ARROW_UP; break;
-		case VK_RIGHT: *special_key = CTRL_ARROW_RIGHT; break;
-		case VK_DOWN: *special_key = CTRL_ARROW_DOWN; break;
-		default: *special_key = 0; retval = unicode; break;
+	if (is_ctrl_pressed(&input)) {
+		if (keycode >= 'A' && keycode <= 'Z') {
+			*special_key = CTRL_KEY(keycode);
+		} else {
+			switch (keycode) {
+			case VK_END: *special_key = CTRL_END; break;
+			case VK_HOME: *special_key = CTRL_HOME; break;
+			case VK_LEFT: *special_key = CTRL_ARROW_LEFT; break;
+			case VK_UP: *special_key = CTRL_ARROW_UP; break;
+			case VK_RIGHT: *special_key = CTRL_ARROW_RIGHT; break;
+			case VK_DOWN: *special_key = CTRL_ARROW_DOWN; break;
+			}
 		}
 	} else if (keycode >= VK_F1 && keycode <= VK_F12) {
 		*special_key = keycode;

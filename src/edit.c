@@ -217,11 +217,7 @@ void edit_enter(void) {
 	if (cursor_pos_bytes < indent_end)
 		indent_end = cursor_pos_bytes;
 	if (indent_end > 0) {
-		unsigned char *indent = (unsigned char *)xmalloc(indent_end + 1);
-		memcpy(indent, prev_line->s, indent_end);
-		indent[indent_end] = '\0';
-		line_insert_strn(editor.file.buffer.curr, 0, indent, indent_end);
-		free(indent);
+		line_insert_strn(editor.file.buffer.curr, 0, prev_line->s, indent_end);
 	}
 	editor.file.cursor.x = index_to_mbnum(editor.file.buffer.curr->s, indent_end);
 	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
@@ -252,11 +248,10 @@ static void delete_empty_line(void) {
 static void break_line(void) {
 	size_t at = mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x);
 	size_t len_to_move = editor.file.buffer.curr->len - at;
-	unsigned char *line_content = (unsigned char *)xmalloc(len_to_move + 1);
-	memmove(line_content, editor.file.buffer.curr->s + at, len_to_move + 1);
-	line_insert_strn(editor.file.buffer.curr->next, 0, line_content, len_to_move);
-	line_del_str(editor.file.buffer.curr, at, editor.file.buffer.curr->len - at);
-	free(line_content);
+	if (len_to_move > 0) {
+		line_insert_strn(editor.file.buffer.curr->next, 0, editor.file.buffer.curr->s + at, len_to_move);
+	}
+	line_del_str(editor.file.buffer.curr, at, len_to_move);
 }
 static void join_with_prev_line(void) {
 	Line *current_line = editor.file.buffer.curr;
