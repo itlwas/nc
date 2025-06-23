@@ -4,10 +4,10 @@
 static int is_word_char(const unsigned char *s);
 size_t utf8_len(unsigned char c) {
 	if ((c & 0x80u) == 0) return 1;
-	if ((c & 0x40u) == 0) return 0;
-	if ((c & 0x20u) == 0) return 2;
-	if ((c & 0x10u) == 0) return 3;
-	return 4;
+	if ((c & 0xE0u) == 0xC0u) return 2;
+	if ((c & 0xF0u) == 0xE0u) return 3;
+	if ((c & 0xF8u) == 0xF0u && c <= 0xF4u) return 4;
+	return 0;
 }
 bool_t is_continuation_byte(unsigned char c) {
 	return (c & 0xC0u) == 0x80u;
