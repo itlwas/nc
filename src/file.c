@@ -25,11 +25,14 @@ void file_load(File *file) {
 	size_t line_cap = 0;
 	ssize_t line_len;
 	bool_t first_line = TRUE;
+	bool_t had_trailing_newline = FALSE;
 	f = fopen(file->path, "rb");
 	if (!f) die("fopen");
 	while ((line_len = getline(&line, &line_cap, f)) != -1) {
+		had_trailing_newline = FALSE;
 		if (line_len > 0 && line[line_len - 1] == '\n') {
 			line_len--;
+			had_trailing_newline = TRUE;
 		}
 		if (line_len > 0 && line[line_len - 1] == '\r') {
 			line_len--;
@@ -43,6 +46,10 @@ void file_load(File *file) {
 			file->buffer.num_lines++;
 			line_insert_strn(file->buffer.curr, 0, (unsigned char *)line, (size_t)line_len);
 		}
+	}
+	if (had_trailing_newline) {
+		line_new(file->buffer.curr, NULL);
+		file->buffer.num_lines++;
 	}
 	free(line);
 	fclose(f);
