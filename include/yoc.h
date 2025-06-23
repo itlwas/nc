@@ -155,6 +155,7 @@ void file_load(File *file);
 void file_save(File *file);
 bool_t file_save_prompt(void);
 void file_quit_prompt(void);
+const char *extract_filename(const char *path);
 bool_t fs_exists(const char *path);
 void fs_canonicalize(const char *path, char *out, size_t size);
 void term_init(void);

@@ -117,7 +117,7 @@ void file_quit_prompt(void) {
 	if (editor.file.is_modified) {
 		Line *input = line_new(NULL, NULL);
 		char prompt[256];
-		const char *name = editor.file.path[0] ? editor.file.path : "[No Name]";
+		const char *name = editor.file.path[0] ? extract_filename(editor.file.path) : "[No Name]";
 		snprintf(prompt, sizeof(prompt), "Save changes to %s before closing? (y,n,esc): ", name);
 		if (status_input(input, prompt, NULL)) {
 			int answer = tolower((unsigned char)input->s[0]);

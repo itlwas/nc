@@ -1,6 +1,6 @@
 #include "yoc.h"
 #include <string.h>
-static const char *extract_filename(const char *path) {
+const char *extract_filename(const char *path) {
 	const char *slash = strrchr(path, '/');
 	const char *backslash = strrchr(path, '\\');
 	const char *sep = (slash > backslash) ? slash : backslash;
