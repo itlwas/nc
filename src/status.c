@@ -1,5 +1,7 @@
 #include "yoc.h"
 #include <string.h>
+#define STATUS_BG_ON  "\x1b[47m\x1b[30m"
+#define STATUS_BG_OFF "\x1b[0m"
 const char *extract_filename(const char *path) {
 	const char *slash = strrchr(path, '/');
 	const char *backslash = strrchr(path, '\\');
@@ -50,18 +52,18 @@ void status_print(void) {
 	if (status_mode == INPUT_MODE) {
 		status_input_print();
 	} else {
-		char rev_on[] = "\x1b[7m";
-		char rev_off[] = "\x1b[0m";
+		const char rev_on[] = STATUS_BG_ON;
+		const char rev_off[] = STATUS_BG_OFF;
 		size_t mlen;
 		if (status_mode == NORMAL)
 			status_set_default();
-		term_write((unsigned char*)rev_on, strlen(rev_on));
+		term_write((const unsigned char *)rev_on, sizeof(rev_on) - 1);
 		term_clear_line();
 		mlen = editor.file.status.len;
 		if (mlen > editor.cols)
 			mlen = editor.cols;
 		term_write((unsigned char *)editor.file.status.msg, mlen);
-		term_write((unsigned char*)rev_off, strlen(rev_off));
+		term_write((const unsigned char *)rev_off, sizeof(rev_off) - 1);
 		status_mode = NORMAL;
 	}
 }
@@ -128,9 +130,11 @@ static void status_input_print(void) {
 	else
 		len = statin->input->len - start;
 	term_set_cursor(0, editor.rows);
+	term_write((const unsigned char *)STATUS_BG_ON, sizeof(STATUS_BG_ON) - 1);
 	term_clear_line();
 	term_write((unsigned char *)msg, msglen);
 	term_write(statin->input->s + start, len);
+	term_write((const unsigned char *)STATUS_BG_OFF, sizeof(STATUS_BG_OFF) - 1);
 	term_set_cursor(statin->cx + msglen - statin->charsoff, editor.rows);
 }
 static void status_realloc(size_t len) {
