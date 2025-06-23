@@ -3,7 +3,6 @@
 #include <string.h>
 #define PREFERRED_COL_UNSET ((size_t)-1)
 static size_t desired_rx = PREFERRED_COL_UNSET;
-static void maybe_reset_modified(void);
 static void delete_char(void);
 static void delete_empty_line(void);
 static void break_line(void);
