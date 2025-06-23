@@ -4,7 +4,7 @@
 static int is_word_char(const unsigned char *s);
 size_t utf8_len(unsigned char c) {
 	if ((c & 0x80u) == 0) return 1;
-	if ((c & 0xE0u) == 0xC0u) return 2;
+	if ((c & 0xE0u) == 0xC0u && c >= 0xC2u) return 2;
 	if ((c & 0xF0u) == 0xE0u) return 3;
 	if ((c & 0xF8u) == 0xF0u && c <= 0xF4u) return 4;
 	return 0;
