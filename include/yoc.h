@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -32,6 +33,7 @@ struct line_t {
 	size_t cap;
 	size_t width;
 	size_t mb_len;
+	uint64_t hash;
 	unsigned char inline_space[LINE_INLINE_CAP];
 	Line *prev;
 	Line *next;
@@ -45,6 +47,7 @@ typedef struct {
 	Line *curr;
 	Line *begin;
 	size_t num_lines;
+	uint64_t digest;
 } Buffer;
 typedef struct {
 	char *msg;
@@ -59,6 +62,7 @@ typedef struct {
 	Buffer buffer;
 	Pos cursor;
 	Status status;
+	uint64_t saved_digest;
 	bool_t is_modified;
 } File;
 typedef struct {
@@ -90,6 +94,7 @@ enum key {
 void die(const char *msg);
 void *xmalloc(size_t size);
 void *xrealloc(void *ptr, size_t size);
+uint64_t fnv1a_hash(const unsigned char *s, size_t len);
 size_t utf8_len(unsigned char c);
 bool_t is_continuation_byte(unsigned char c);
 size_t move_mbleft(const unsigned char *s, size_t pos);

@@ -34,7 +34,6 @@ static void init(char *file_path) {
 		memcpy(editor.file.path, canonical_path, len + 1);
 		if (fs_exists(editor.file.path)) {
 			file_load(&editor.file);
-			editor.file.is_modified = FALSE;
 		}
 	}
 	term_init();

@@ -160,3 +160,12 @@ static int is_word_char(const unsigned char *s) {
 	}
 	return !ispunct((unsigned char)s[0]);
 }
+uint64_t fnv1a_hash(const unsigned char *s, size_t len) {
+	uint64_t hash = 0xcbf29ce484222325ULL;
+	size_t i;
+	for (i = 0; i < len; ++i) {
+		hash ^= s[i];
+		hash *= 0x100000001b3ULL;
+	}
+	return hash;
+}

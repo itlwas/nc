@@ -28,6 +28,7 @@ void file_load(File *file) {
 	bool_t had_trailing_newline = FALSE;
 	f = fopen(file->path, "rb");
 	if (!f) die("fopen");
+	file->buffer.digest ^= file->buffer.begin->hash;
 	while ((line_len = getline(&line, &line_cap, f)) != -1) {
 		had_trailing_newline = FALSE;
 		if (line_len > 0 && line[line_len - 1] == '\n') {
@@ -44,16 +45,28 @@ void file_load(File *file) {
 			line_new(file->buffer.curr, file->buffer.curr->next);
 			file->buffer.curr = file->buffer.curr->next;
 			file->buffer.num_lines++;
+			file->buffer.digest ^= file->buffer.curr->hash;
 			line_insert_strn(file->buffer.curr, 0, (unsigned char *)line, (size_t)line_len);
 		}
 	}
 	if (had_trailing_newline) {
 		line_new(file->buffer.curr, NULL);
 		file->buffer.num_lines++;
+		file->buffer.digest ^= file->buffer.curr->next->hash;
 	}
 	free(line);
 	fclose(f);
 	file->buffer.curr = file->buffer.begin;
+	file->buffer.digest = 0;
+	{
+		Line *l;
+		for (l = file->buffer.begin; l; l = l->next) {
+			l->hash = fnv1a_hash(l->s, l->len);
+			file->buffer.digest ^= l->hash;
+		}
+	}
+	file->saved_digest = file->buffer.digest;
+	file->is_modified = FALSE;
 }
 void file_save(File *file) {
 	FILE *f = fopen(file->path, "w");
@@ -72,9 +85,12 @@ void file_save(File *file) {
 			fputc('\n', f);
 			line_new(line, NULL);
 			file->buffer.num_lines++;
+			file->buffer.digest ^= line->next->hash;
 		}
 	}
 	fclose(f);
+	file->saved_digest = file->buffer.digest;
+	file->is_modified = FALSE;
 }
 bool_t file_save_prompt(void) {
 	Line *input;

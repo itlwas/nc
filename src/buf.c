@@ -29,6 +29,7 @@ static void line_reserve(Line *line, size_t additional) {
 void buf_init(Buffer *buffer) {
 	buffer->begin = buffer->curr = line_new(NULL, NULL);
 	buffer->num_lines = 1;
+	buffer->digest = buffer->begin->hash;
 }
 void buf_free(Buffer *buffer) {
 	while (buffer->begin) {
@@ -48,6 +49,7 @@ void buf_del_line(Buffer *buffer, Line *line) {
 		buffer->begin = line->next;
 	if (buffer->curr == line)
 		buffer->curr = line->next ? line->next : line->prev;
+	buffer->digest ^= line->hash;
 	if (line->s != line->inline_space)
 		free(line->s);
 	free(line);
@@ -56,6 +58,7 @@ void buf_del_line(Buffer *buffer, Line *line) {
 	if (buffer->num_lines == 0) {
 		buffer->begin = buffer->curr = line_new(NULL, NULL);
 		buffer->num_lines = 1;
+		buffer->digest = buffer->begin->hash;
 	} else if (!buffer->curr) {
 		buffer->curr = buffer->begin;
 	}
@@ -68,6 +71,7 @@ Line *line_new(Line *prev, Line *next) {
 	line->cap = LINE_INLINE_CAP;
 	line->width = LINE_WIDTH_UNCACHED;
 	line->mb_len = LINE_MBLEN_UNCACHED;
+	line->hash = fnv1a_hash(line->s, 0);
 	line->prev = prev;
 	line->next = next;
 	if (prev)
