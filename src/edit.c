@@ -275,13 +275,6 @@ void edit_process_key(void) {
 	}
 	render_scroll();
 }
-static void maybe_reset_modified(void) {
-	if (editor.file.buffer.num_lines == 1 && editor.file.buffer.begin->len == 0) {
-		if (editor.file.path[0] == '\0' || !fs_exists(editor.file.path)) {
-			editor.file.is_modified = FALSE;
-		}
-	}
-}
 static bool_t is_blank(Line *line) {
 	return line->len == 0;
 }

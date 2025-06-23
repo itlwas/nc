@@ -26,9 +26,10 @@ void file_load(File *file) {
 	ssize_t line_len;
 	bool_t first_line = TRUE;
 	bool_t had_trailing_newline = FALSE;
+	Buffer *buf = &file->buffer;
 	f = fopen(file->path, "rb");
 	if (!f) die("fopen");
-	file->buffer.digest ^= file->buffer.begin->hash;
+	buf->digest = 0;
 	while ((line_len = getline(&line, &line_cap, f)) != -1) {
 		had_trailing_newline = FALSE;
 		if (line_len > 0 && line[line_len - 1] == '\n') {
@@ -39,33 +40,29 @@ void file_load(File *file) {
 			line_len--;
 		}
 		if (first_line) {
-			line_insert_strn(file->buffer.curr, 0, (unsigned char *)line, (size_t)line_len);
+			line_insert_strn(buf->curr, 0, (unsigned char *)line, (size_t)line_len);
+			buf->curr->hash = fnv1a_hash(buf->curr->s, buf->curr->len);
+			buf->digest ^= buf->curr->hash;
 			first_line = FALSE;
 		} else {
-			line_new(file->buffer.curr, file->buffer.curr->next);
-			file->buffer.curr = file->buffer.curr->next;
-			file->buffer.num_lines++;
-			file->buffer.digest ^= file->buffer.curr->hash;
-			line_insert_strn(file->buffer.curr, 0, (unsigned char *)line, (size_t)line_len);
+			Line *newline = line_new(buf->curr, buf->curr->next);
+			buf->curr = newline;
+			buf->num_lines++;
+			line_insert_strn(newline, 0, (unsigned char *)line, (size_t)line_len);
+			newline->hash = fnv1a_hash(newline->s, newline->len);
+			buf->digest ^= newline->hash;
 		}
 	}
 	if (had_trailing_newline) {
-		line_new(file->buffer.curr, NULL);
-		file->buffer.num_lines++;
-		file->buffer.digest ^= file->buffer.curr->next->hash;
+		Line *newline = line_new(buf->curr, NULL);
+		buf->curr = newline;
+		buf->num_lines++;
+		buf->digest ^= newline->hash;
 	}
 	free(line);
 	fclose(f);
-	file->buffer.curr = file->buffer.begin;
-	file->buffer.digest = 0;
-	{
-		Line *l;
-		for (l = file->buffer.begin; l; l = l->next) {
-			l->hash = fnv1a_hash(l->s, l->len);
-			file->buffer.digest ^= l->hash;
-		}
-	}
-	file->saved_digest = file->buffer.digest;
+	buf->curr = buf->begin;
+	file->saved_digest = buf->digest;
 	file->is_modified = FALSE;
 }
 void file_save(File *file) {
