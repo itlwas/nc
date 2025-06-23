@@ -178,7 +178,7 @@ void edit_enter(void) {
 	pre_line_change(prev_line);
 	line_new(prev_line, prev_line->next);
 	editor.file.buffer.num_lines++;
-	editor.file.buffer.digest ^= prev_line->next->hash;
+	editor.file.buffer.digest += prev_line->next->hash;
 	if (editor.file.cursor.x < line_get_mblen(prev_line))
 		break_line();
 	post_line_change(prev_line);
@@ -318,10 +318,10 @@ void edit_move_next_para(void) {
 	desired_rx = PREFERRED_COL_UNSET;
 }
 static void pre_line_change(Line *line) {
-	editor.file.buffer.digest ^= line->hash;
+	editor.file.buffer.digest -= line->hash;
 }
 static void post_line_change(Line *line) {
 	line->hash = fnv1a_hash(line->s, line->len);
-	editor.file.buffer.digest ^= line->hash;
+	editor.file.buffer.digest += line->hash;
 	editor.file.is_modified = (editor.file.buffer.digest != editor.file.saved_digest);
 }

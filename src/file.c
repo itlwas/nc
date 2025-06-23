@@ -42,7 +42,7 @@ void file_load(File *file) {
 		if (first_line) {
 			line_insert_strn(buf->curr, 0, (unsigned char *)line, (size_t)line_len);
 			buf->curr->hash = fnv1a_hash(buf->curr->s, buf->curr->len);
-			buf->digest ^= buf->curr->hash;
+			buf->digest += buf->curr->hash;
 			first_line = FALSE;
 		} else {
 			Line *newline = line_new(buf->curr, buf->curr->next);
@@ -50,14 +50,14 @@ void file_load(File *file) {
 			buf->num_lines++;
 			line_insert_strn(newline, 0, (unsigned char *)line, (size_t)line_len);
 			newline->hash = fnv1a_hash(newline->s, newline->len);
-			buf->digest ^= newline->hash;
+			buf->digest += newline->hash;
 		}
 	}
 	if (had_trailing_newline) {
 		Line *newline = line_new(buf->curr, NULL);
 		buf->curr = newline;
 		buf->num_lines++;
-		buf->digest ^= newline->hash;
+		buf->digest += newline->hash;
 	}
 	free(line);
 	fclose(f);
@@ -82,7 +82,7 @@ void file_save(File *file) {
 			fputc('\n', f);
 			line_new(line, NULL);
 			file->buffer.num_lines++;
-			file->buffer.digest ^= line->next->hash;
+			file->buffer.digest += line->next->hash;
 		}
 	}
 	fclose(f);

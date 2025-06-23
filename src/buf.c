@@ -49,7 +49,7 @@ void buf_del_line(Buffer *buffer, Line *line) {
 		buffer->begin = line->next;
 	if (buffer->curr == line)
 		buffer->curr = line->next ? line->next : line->prev;
-	buffer->digest ^= line->hash;
+	buffer->digest -= line->hash;
 	if (line->s != line->inline_space)
 		free(line->s);
 	free(line);
