@@ -80,10 +80,13 @@ static void render_rows(void) {
 		}
 		bar_start = (scroll_pos * (editor.rows - bar_height)) / max_scroll_pos;
 	}
-	if (!scrollbar && prev_scrollbar_visible && editor.screen_lens) {
-		size_t r;
-		for (r = 0; r < editor.screen_rows; ++r)
-			editor.screen_lens[r] = 0;
+	if (!scrollbar && prev_scrollbar_visible) {
+		term_clear_screen();
+		if (editor.screen_lens) {
+			size_t r;
+			for (r = 0; r < editor.screen_rows; ++r)
+				editor.screen_lens[r] = 0;
+		}
 	}
 	if (!rowbuf)
 		ensure_screen_buffer();
