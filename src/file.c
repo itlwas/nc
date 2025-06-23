@@ -59,10 +59,14 @@ void file_save(File *file) {
 	}
 	for (line = file->buffer.begin; line; line = line->next) {
 		fwrite(line->s, 1, line->len, f);
-		if (line->next)
+		if (line->next) {
 			fputc('\n', f);
+		} else if (line->len > 0) {
+			fputc('\n', f);
+			line_new(line, NULL);
+			file->buffer.num_lines++;
+		}
 	}
-	fputc('\n', f);
 	fclose(f);
 }
 bool_t file_save_prompt(void) {
