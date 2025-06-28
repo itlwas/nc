@@ -270,6 +270,7 @@ void edit_process_key(void) {
 		case CTRL_KEY('s'): file_save_prompt(); break;
 		case CTRL_KEY('q'): file_quit_prompt(); break;
 		case CTRL_KEY('r'): show_line_numbers = !show_line_numbers; break;
+		case CTRL_KEY('o'): file_open_prompt(); break;
 		}
 	}
 	render_scroll();

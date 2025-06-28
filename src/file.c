@@ -140,3 +140,75 @@ void file_quit_prompt(void) {
 	term_switch_to_norm();
 	exit(0);
 }
+bool_t file_prompt_save_if_modified(void) {
+	Line *input;
+	char prompt[256];
+	const char *name;
+	if (!editor.file.is_modified)
+		return TRUE;
+	input = line_new(NULL, NULL);
+	name = editor.file.path[0] ? extract_filename(editor.file.path) : "[No Name]";
+	snprintf(prompt, sizeof(prompt), "Save changes to %s before opening new file? (y,n,esc): ", name);
+	if (status_input(input, prompt, NULL)) {
+		int answer = tolower((unsigned char)input->s[0]);
+		line_free(input);
+		if (answer == 'y') {
+			return file_save_prompt();
+		} else if (answer == 'n') {
+			return TRUE;
+		}
+	}
+	line_free(input);
+	return FALSE;
+}
+static void file_reset(File *file) {
+	buf_free(&file->buffer);
+	buf_init(&file->buffer);
+	file->cursor.x = 0;
+	file->cursor.y = 0;
+	file->cursor.rx = 0;
+	file->saved_digest = file->buffer.digest;
+	file->is_modified = FALSE;
+}
+bool_t file_open_prompt(void) {
+	Line *input;
+	char tmp[4096];
+	char canonical[4096];
+	size_t len;
+	input = line_new(NULL, NULL);
+	if (!status_input(input, "Open: ", NULL)) {
+		line_free(input);
+		return FALSE;
+	}
+	if (input->len == 0) {
+		line_free(input);
+		return FALSE;
+	}
+	if (!file_prompt_save_if_modified()) {
+		line_free(input);
+		return FALSE;
+	}
+	if (input->len >= sizeof(tmp)) {
+		line_free(input);
+		status_msg("Path too long");
+		return FALSE;
+	}
+	memcpy(tmp, input->s, input->len);
+	tmp[input->len] = '\0';
+	fs_canonicalize(tmp, canonical, sizeof(canonical));
+	len = strlen(canonical);
+	if (len + 1 > editor.file.cap) {
+		editor.file.cap = len + 1;
+		editor.file.path = (char *)xrealloc(editor.file.path, editor.file.cap);
+	}
+	memcpy(editor.file.path, canonical, len + 1);
+	file_reset(&editor.file);
+	if (fs_exists(editor.file.path)) {
+		file_load(&editor.file);
+	}
+	editor.window.x = 0;
+	editor.window.y = 0;
+	editor.top_line = editor.file.buffer.begin;
+	line_free(input);
+	return TRUE;
+}
