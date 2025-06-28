@@ -16,7 +16,7 @@ void term_write(const unsigned char *s, size_t len) {
 }
 size_t term_read(unsigned char **s, int *special_key) {
 	static unsigned char buf[64];
-	int nread;
+	ssize_t nread;
 	*special_key = 0;
 	*s = NULL;
 	for (;;) {
@@ -110,10 +110,10 @@ void term_enable_raw(void) {
 		die("tcgetattr");
 	atexit(term_disable_raw);
 	raw = orig_termios;
-	raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
-	raw.c_oflag &= ~(OPOST);
+	raw.c_iflag &= (tcflag_t)~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
+	raw.c_oflag &= (tcflag_t)~(OPOST);
 	raw.c_cflag |= (CS8);
-	raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
+	raw.c_lflag &= (tcflag_t)~(ECHO | ICANON | IEXTEN | ISIG);
 	raw.c_cc[VMIN] = 1;
 	raw.c_cc[VTIME] = 0;
 	if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1)
@@ -137,7 +137,7 @@ void term_show_cursor(void) {
 }
 void term_set_cursor(size_t x, size_t y) {
 	char buf[32];
-	int len = snprintf(buf, sizeof(buf), "\x1b[%zu;%zuH", y + 1, x + 1);
+	int len = snprintf(buf, sizeof(buf), "\x1b[%lu;%luH", (unsigned long)(y + 1), (unsigned long)(x + 1));
 	term_write((unsigned char *)buf, (size_t)len);
 }
 bool_t fs_exists(const char *path) {
