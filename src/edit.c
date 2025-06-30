@@ -226,11 +226,16 @@ static void edit_goto_line(void) {
 		status_msg("Invalid position");
 		return;
 	}
-	editor.file.buffer.curr = editor.file.buffer.begin;
-	editor.file.cursor.y = 0;
-	while (editor.file.cursor.y + 1 < (size_t)lineno && editor.file.buffer.curr->next) {
-		editor.file.buffer.curr = editor.file.buffer.curr->next;
-		++editor.file.cursor.y;
+	{
+		size_t target_y = (size_t)(lineno - 1);
+		while (editor.file.cursor.y < target_y && editor.file.buffer.curr->next) {
+			editor.file.buffer.curr = editor.file.buffer.curr->next;
+			++editor.file.cursor.y;
+		}
+		while (editor.file.cursor.y > target_y && editor.file.buffer.curr->prev) {
+			editor.file.buffer.curr = editor.file.buffer.curr->prev;
+			--editor.file.cursor.y;
+		}
 	}
 	if (colno < 1)
 		colno = 1;
@@ -239,7 +244,6 @@ static void edit_goto_line(void) {
 		editor.file.cursor.x = rx_to_x(editor.file.buffer.curr, target_rx);
 		editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	}
-	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	line_free(input);
 }
 static void delete_char(void) {
