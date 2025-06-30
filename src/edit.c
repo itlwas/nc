@@ -12,7 +12,7 @@ static bool_t is_blank(Line *line);
 static void pre_line_change(Line *line);
 static void post_line_change(Line *line);
 static void edit_goto_line(void);
-
+static void edit_duplicate_line(void);
 void edit_move_home(void) {
 	editor.file.cursor.x = 0;
 	editor.file.cursor.rx = 0;
@@ -320,6 +320,7 @@ void edit_process_key(void) {
 		case CTRL_KEY('r'): show_line_numbers = !show_line_numbers; break;
 		case CTRL_KEY('o'): file_open_prompt(); break;
 		case CTRL_KEY('g'): edit_goto_line(); break;
+		case CTRL_KEY('d'): edit_duplicate_line(); break;
 		}
 	}
 	render_scroll();
@@ -373,5 +374,21 @@ static void pre_line_change(Line *line) {
 static void post_line_change(Line *line) {
 	line->hash = fnv1a_hash(line->s, line->len);
 	editor.file.buffer.digest += line->hash;
+	editor.file.is_modified = (editor.file.buffer.digest != editor.file.saved_digest);
+}
+static void edit_duplicate_line(void) {
+	Line *orig = editor.file.buffer.curr;
+	Line *dup;
+	dup = line_new(orig, orig->next);
+	editor.file.buffer.num_lines++;
+	editor.file.buffer.digest += dup->hash;
+	pre_line_change(dup);
+	line_insert_strn(dup, 0, orig->s, orig->len);
+	post_line_change(dup);
+	editor.file.buffer.curr = dup;
+	++editor.file.cursor.y;
+	edit_fix_cursor_x();
+	editor.file.cursor.rx = x_to_rx(dup, editor.file.cursor.x);
+	desired_rx = editor.file.cursor.rx;
 	editor.file.is_modified = (editor.file.buffer.digest != editor.file.saved_digest);
 }
