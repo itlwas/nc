@@ -1,6 +1,7 @@
 #include "yoc.h"
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 #define PREFERRED_COL_UNSET ((size_t)-1)
 static size_t desired_rx = PREFERRED_COL_UNSET;
 static void delete_char(void);
@@ -10,6 +11,8 @@ static void join_with_prev_line(void);
 static bool_t is_blank(Line *line);
 static void pre_line_change(Line *line);
 static void post_line_change(Line *line);
+static void edit_goto_line(void);
+
 void edit_move_home(void) {
 	editor.file.cursor.x = 0;
 	editor.file.cursor.rx = 0;
@@ -198,6 +201,47 @@ void edit_enter(void) {
 	desired_rx = editor.file.cursor.rx;
 	editor.file.is_modified = (editor.file.buffer.digest != editor.file.saved_digest);
 }
+static void edit_goto_line(void) {
+	Line *input;
+	char *endptr;
+	long lineno;
+	long colno;
+	input = line_new(NULL, NULL);
+	if (!status_input(input, "Go to: ", NULL)) {
+		line_free(input);
+		return;
+	}
+	if (input->len == 0) {
+		line_free(input);
+		return;
+	}
+	lineno = strtol((const char *)input->s, &endptr, 10);
+	colno = -1;
+	if (*endptr == ':') {
+		++endptr;
+		colno = strtol(endptr, &endptr, 10);
+	}
+	if (*endptr != '\0' || lineno <= 0 || (size_t)lineno > editor.file.buffer.num_lines || colno == 0) {
+		line_free(input);
+		status_msg("Invalid position");
+		return;
+	}
+	editor.file.buffer.curr = editor.file.buffer.begin;
+	editor.file.cursor.y = 0;
+	while (editor.file.cursor.y + 1 < (size_t)lineno && editor.file.buffer.curr->next) {
+		editor.file.buffer.curr = editor.file.buffer.curr->next;
+		++editor.file.cursor.y;
+	}
+	if (colno < 1)
+		colno = 1;
+	{
+		size_t target_rx = (size_t)(colno - 1);
+		editor.file.cursor.x = rx_to_x(editor.file.buffer.curr, target_rx);
+		editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	}
+	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+	line_free(input);
+}
 static void delete_char(void) {
 	size_t start;
 	size_t char_len;
@@ -271,6 +315,7 @@ void edit_process_key(void) {
 		case CTRL_KEY('q'): file_quit_prompt(); break;
 		case CTRL_KEY('r'): show_line_numbers = !show_line_numbers; break;
 		case CTRL_KEY('o'): file_open_prompt(); break;
+		case CTRL_KEY('g'): edit_goto_line(); break;
 		}
 	}
 	render_scroll();
