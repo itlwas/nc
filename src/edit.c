@@ -203,19 +203,30 @@ void edit_enter(void) {
 }
 static void edit_duplicate_line(void) {
 	Line *orig = editor.file.buffer.curr;
-	Line *dup;
-	dup = line_new(orig, orig->next);
+	Line *dup = line_new(orig, orig->next);
+	if (orig->len > 0) {
+		if (orig->len + 1 > dup->cap) {
+			dup->cap = orig->len + 1;
+			if (dup->s == dup->inline_space)
+				dup->s = (unsigned char *)xmalloc(dup->cap);
+			else
+				dup->s = (unsigned char *)xrealloc(dup->s, dup->cap);
+		}
+		memcpy(dup->s, orig->s, orig->len);
+	}
+	dup->len = orig->len;
+	dup->s[dup->len] = '\0';
+	dup->width = orig->width;
+	dup->mb_len = orig->mb_len;
 	editor.file.buffer.num_lines++;
+	dup->hash = fnv1a_hash(dup->s, dup->len);
 	editor.file.buffer.digest += dup->hash;
-	pre_line_change(dup);
-	line_insert_strn(dup, 0, orig->s, orig->len);
-	post_line_change(dup);
 	editor.file.buffer.curr = dup;
 	++editor.file.cursor.y;
 	edit_fix_cursor_x();
 	editor.file.cursor.rx = x_to_rx(dup, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
-	editor.file.is_modified = (editor.file.buffer.digest != editor.file.saved_digest);
+	editor.file.is_modified = TRUE;
 }
 static void edit_goto_line(void) {
 	Line *input;
