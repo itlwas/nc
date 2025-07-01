@@ -1,8 +1,6 @@
 #include "yoc.h"
 #include <ctype.h>
 #include <string.h>
-#define FNV_OFFSET_BASIS (((uint64_t)0xCBF29CE4u << 32) | 0x84222325u)
-#define FNV_PRIME        (((uint64_t)0x00000100u << 32) | 0x000001B3u)
 static int is_word_char(const unsigned char *s);
 size_t utf8_len(unsigned char c) {
 	if ((c & 0x80u) == 0) return 1;
@@ -161,13 +159,4 @@ static int is_word_char(const unsigned char *s) {
 		return s[1] == '\0' || !is_continuation_byte(s[1]);
 	}
 	return !ispunct((unsigned char)s[0]);
-}
-uint64_t fnv1a_hash(const unsigned char *s, size_t len) {
-	uint64_t hash = FNV_OFFSET_BASIS;
-	size_t i;
-	for (i = 0; i < len; ++i) {
-		hash ^= s[i];
-		hash *= FNV_PRIME;
-	}
-	return hash;
 }

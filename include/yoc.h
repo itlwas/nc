@@ -94,7 +94,6 @@ enum key {
 void die(const char *msg);
 void *xmalloc(size_t size);
 void *xrealloc(void *ptr, size_t size);
-uint64_t fnv1a_hash(const unsigned char *s, size_t len);
 size_t utf8_len(unsigned char c);
 bool_t is_continuation_byte(unsigned char c);
 size_t move_mbleft(const unsigned char *s, size_t pos);
@@ -109,6 +108,7 @@ size_t width_to_length(const unsigned char *s, size_t width);
 size_t rx_to_x(Line *line, size_t rx_target);
 size_t x_to_rx(Line *line, size_t x);
 size_t find_first_nonblank(const unsigned char *s);
+uint64_t fnv1a_hash(const unsigned char *s, size_t len);
 void buf_init(Buffer *buffer);
 void buf_free(Buffer *buffer);
 void buf_del_line(Buffer *buffer, Line *line);

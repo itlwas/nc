@@ -1,5 +1,17 @@
 #include "yoc.h"
 #include <string.h>
+#include <stdint.h>
+#define FNV_OFFSET_BASIS (((uint64_t)0xCBF29CE4u << 32) | 0x84222325u)
+#define FNV_PRIME        (((uint64_t)0x00000100u << 32) | 0x000001B3u)
+uint64_t fnv1a_hash(const unsigned char *s, size_t len) {
+	uint64_t hash = FNV_OFFSET_BASIS;
+	size_t i;
+	for (i = 0; i < len; ++i) {
+		hash ^= s[i];
+		hash *= FNV_PRIME;
+	}
+	return hash;
+}
 static size_t calc_capacity(size_t current, size_t required) {
 	if (current < LINE_INLINE_CAP)
 		current = LINE_INLINE_CAP;
