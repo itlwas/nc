@@ -106,7 +106,7 @@ static void render_rows(void) {
 				size_t pos;
 				snprintf(msg, sizeof(msg), "yoc ~ %s", YOC_VERSION);
 				welcomelen = strlen(msg);
-				padding = (avail_cols - (size_t)welcomelen) / 2;
+				padding = (avail_cols > welcomelen) ? (avail_cols - welcomelen) / 2 : 0;
 				pos = 0;
 				if (padding) {
 					rowbuf[pos++] = '~';
