@@ -199,6 +199,19 @@ void edit_enter(void) {
 	editor.file.cursor.x = index_to_mbnum(editor.file.buffer.curr->s, indent_end);
 	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
+	{
+		size_t pos = prev_line->len;
+		while (pos > 0 && isspace((unsigned char)prev_line->s[pos - 1]))
+			--pos;
+		if (pos > 0 && prev_line->s[pos - 1] == '{') {
+			pre_line_change(editor.file.buffer.curr);
+			line_insert_strn(editor.file.buffer.curr, mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x), (const unsigned char*)"\t", 1);
+			post_line_change(editor.file.buffer.curr);
+			++editor.file.cursor.x;
+			editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+			desired_rx = editor.file.cursor.rx;
+		}
+	}
 	editor.file.is_modified = (editor.file.buffer.digest != editor.file.saved_digest);
 }
 static void edit_duplicate_line(void) {
