@@ -127,8 +127,15 @@ static void render_rows(void) {
 			}
 		} else {
 			const unsigned char *s = line->s;
-			size_t i = 0, width = 0, pos = row_len;
+			size_t i, width, pos = row_len;
 			size_t text_cols = avail_cols - (show_line_numbers ? lineno_pad : 0);
+			if (editor.window.x > 0) {
+				i = width_to_length(s, editor.window.x);
+				width = editor.window.x;
+			} else {
+				i = 0;
+				width = 0;
+			}
 			while (i < line->len && width < editor.window.x + text_cols) {
 				unsigned char c = s[i];
 				size_t char_len = 1;
