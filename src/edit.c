@@ -13,6 +13,7 @@ static void pre_line_change(Line *line);
 static void post_line_change(Line *line);
 static void edit_duplicate_line(void);
 static void edit_goto_line(void);
+static void edit_delete_forward(void);
 void edit_move_home(void) {
 	editor.file.cursor.x = 0;
 	editor.file.cursor.rx = 0;
@@ -352,6 +353,28 @@ static void join_with_prev_line(void) {
 	buf_del_line(&editor.file.buffer, current_line);
 	editor.file.is_modified = (editor.file.buffer.digest != editor.file.saved_digest);
 }
+static void edit_delete_forward(void) {
+	Line *line = editor.file.buffer.curr;
+	if (editor.file.cursor.x < line_get_mblen(line)) {
+		size_t start, char_len;
+		pre_line_change(line);
+		start = mbnum_to_index(line->s, editor.file.cursor.x);
+		char_len = utf8_len(line->s[start]);
+		if (char_len == 0 || start + char_len > line->len)
+			char_len = 1;
+		line_del_str(line, start, char_len);
+		post_line_change(line);
+	} else if (line->next) {
+		Line *next = line->next;
+		pre_line_change(line);
+		line_insert_strn(line, line->len, next->s, next->len);
+		post_line_change(line);
+		buf_del_line(&editor.file.buffer, next);
+	}
+	edit_fix_cursor_x();
+	editor.file.cursor.rx = x_to_rx(line, editor.file.cursor.x);
+	desired_rx = editor.file.cursor.rx;
+}
 void edit_process_key(void) {
 	int special_key;
 	unsigned char *s;
@@ -367,6 +390,7 @@ void edit_process_key(void) {
 		case END: edit_move_end(); break;
 		case PAGE_UP: edit_move_pgup(); break;
 		case PAGE_DOWN: edit_move_pgdown(); break;
+		case DEL: edit_delete_forward(); break;
 		case ARROW_LEFT: edit_move_left(); break;
 		case ARROW_UP: edit_move_up(); break;
 		case ARROW_RIGHT: edit_move_right(); break;
