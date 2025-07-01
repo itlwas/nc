@@ -165,12 +165,37 @@ void edit_insert(const unsigned char *s) {
 	edit_insert_n(s, strlen((const char *)s));
 }
 void edit_backspace(void) {
-	if (editor.file.cursor.x > 0 && editor.file.buffer.curr->len > 0) {
-		delete_char();
-	} else if (editor.file.cursor.x == 0 && editor.file.buffer.curr->len == 0 && editor.file.buffer.curr->prev != NULL) {
-		delete_empty_line();
-	} else if (editor.file.cursor.x == 0 && editor.file.buffer.curr->len > 0 && editor.file.buffer.curr->prev != NULL) {
-		join_with_prev_line();
+	Line *line = editor.file.buffer.curr;
+	if (editor.file.cursor.x > 0 && line->len > 0) {
+		size_t first_nb_idx = find_first_nonblank(line->s);
+		size_t first_nb_mb = index_to_mbnum(line->s, first_nb_idx);
+		if (editor.file.cursor.x <= first_nb_mb) {
+			size_t cur_rx = x_to_rx(line, editor.file.cursor.x);
+			size_t target_rx = (cur_rx == 0) ? 0 : (cur_rx - 1) & ~(editor.tabsize - 1);
+			size_t target_x = rx_to_x(line, target_rx);
+			if (target_x < editor.file.cursor.x) {
+				size_t start_idx = mbnum_to_index(line->s, target_x);
+				size_t end_idx = mbnum_to_index(line->s, editor.file.cursor.x);
+				size_t del_len = end_idx - start_idx;
+				if (del_len > 0) {
+					pre_line_change(line);
+					line_del_str(line, start_idx, del_len);
+					post_line_change(line);
+					editor.file.cursor.x = target_x;
+				} else {
+					delete_char();
+				}
+			} else {
+				delete_char();
+			}
+		} else {
+			delete_char();
+		}
+	} else if (editor.file.cursor.x == 0) {
+		if (line->len == 0 && line->prev)
+			delete_empty_line();
+		else if (line->len > 0 && line->prev)
+			join_with_prev_line();
 	}
 	editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
 	desired_rx = editor.file.cursor.rx;
