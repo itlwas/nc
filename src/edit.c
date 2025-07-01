@@ -215,19 +215,18 @@ void edit_enter(void) {
 	{
 		size_t first_nb = find_first_nonblank(editor.file.buffer.curr->s);
 		if (editor.file.buffer.curr->s[first_nb] == '}') {
-			Line *closing = line_new(editor.file.buffer.curr, editor.file.buffer.curr->next);
-			editor.file.buffer.num_lines++;
-			editor.file.buffer.digest += closing->hash;
 			size_t indent_len = first_nb;
 			if (indent_len > 0 && editor.file.buffer.curr->s[indent_len - 1] == '\t')
 				--indent_len;
 			size_t move_len = editor.file.buffer.curr->len - first_nb;
 			if (move_len > 0) {
-				pre_line_change(closing);
+				Line *closing = line_new(editor.file.buffer.curr, editor.file.buffer.curr->next);
 				if (indent_len > 0)
 					line_insert_strn(closing, 0, editor.file.buffer.curr->s, indent_len);
 				line_insert_strn(closing, indent_len, editor.file.buffer.curr->s + first_nb, move_len);
-				post_line_change(closing);
+				closing->hash = fnv1a_hash(closing->s, closing->len);
+				editor.file.buffer.digest += closing->hash;
+				editor.file.buffer.num_lines++;
 				pre_line_change(editor.file.buffer.curr);
 				line_del_str(editor.file.buffer.curr, first_nb, move_len);
 				post_line_change(editor.file.buffer.curr);
