@@ -216,9 +216,10 @@ void edit_enter(void) {
 		size_t first_nb = find_first_nonblank(editor.file.buffer.curr->s);
 		if (editor.file.buffer.curr->s[first_nb] == '}') {
 			size_t indent_len = first_nb;
+			size_t move_len;
 			if (indent_len > 0 && editor.file.buffer.curr->s[indent_len - 1] == '\t')
 				--indent_len;
-			size_t move_len = editor.file.buffer.curr->len - first_nb;
+			move_len = editor.file.buffer.curr->len - first_nb;
 			if (move_len > 0) {
 				Line *closing = line_new(editor.file.buffer.curr, editor.file.buffer.curr->next);
 				if (indent_len > 0)
