@@ -9,6 +9,7 @@
 #include <dirent.h>
 #include <limits.h>
 static struct termios orig_termios;
+static volatile sig_atomic_t winch_flag = 0;
 static void handle_winch(int sig);
 void term_write(const unsigned char *s, size_t len) {
 	if (write(STDOUT_FILENO, s, len) == -1)
@@ -26,6 +27,10 @@ size_t term_read(unsigned char **s, int *special_key) {
 		}
 		if (nread == -1) {
 			if (errno == EINTR || errno == EAGAIN) {
+				if (winch_flag) {
+					winch_flag = 0;
+					render_refresh();
+				}
 				continue;
 			}
 			die("read");
@@ -152,5 +157,5 @@ void fs_canonicalize(const char *path, char *out, size_t size) {
 }
 static void handle_winch(int sig) {
 	(void)sig;
-	render_refresh();
+	winch_flag = 1;
 }
