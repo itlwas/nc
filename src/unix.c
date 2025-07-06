@@ -12,8 +12,16 @@ static struct termios orig_termios;
 static volatile sig_atomic_t winch_flag = 0;
 static void handle_winch(int sig);
 void term_write(const unsigned char *s, size_t len) {
-	if (write(STDOUT_FILENO, s, len) == -1)
-		die("write");
+	while (len > 0) {
+		ssize_t written = write(STDOUT_FILENO, s, len);
+		if (written == -1) {
+			if (errno == EINTR)
+				continue;
+			die("write");
+		}
+		s += (size_t)written;
+		len -= (size_t)written;
+	}
 }
 size_t term_read(unsigned char **s, int *special_key) {
 	static unsigned char buf[64];

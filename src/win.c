@@ -203,9 +203,13 @@ void term_set_cursor(size_t x, size_t y) {
 		die("SetConsoleCursorPosition");
 }
 static void write_console_wide(const wchar_t *ws, size_t wlen) {
-	DWORD written;
-	if (!WriteConsoleW(hOut, ws, (DWORD)wlen, &written, NULL))
-		die("WriteConsoleW");
+	while (wlen > 0) {
+		DWORD written;
+		if (!WriteConsoleW(hOut, ws, (DWORD)wlen, &written, NULL))
+			die("WriteConsoleW");
+		ws += written;
+		wlen -= written;
+	}
 }
 static wchar_t get_wch(int *special_key) {
 	INPUT_RECORD input;
