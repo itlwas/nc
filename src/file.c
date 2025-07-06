@@ -66,7 +66,7 @@ void file_load(File *file) {
 	file->is_modified = FALSE;
 }
 void file_save(File *file) {
-	FILE *f = fopen(file->path, "w");
+	FILE *f = fopen(file->path, "wb");
 	Line *line;
 	if (!f) die("fopen");
 	setvbuf(f, NULL, _IOFBF, 65536);
@@ -169,6 +169,7 @@ static void file_reset(File *file) {
 	file->cursor.rx = 0;
 	file->saved_digest = file->buffer.digest;
 	file->is_modified = FALSE;
+	editor.top_line = file->buffer.begin;
 }
 bool_t file_open_prompt(void) {
 	Line *input;
