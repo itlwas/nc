@@ -76,6 +76,13 @@ size_t term_read(unsigned char **s, int *special_key) {
 					case '7': *special_key = HOME; break;
 					case '8': *special_key = END; break;
 				}
+			} else if (buf[1] == 'O' && nread == 3) {
+				switch (buf[2]) {
+					case 'H': *special_key = HOME; break;
+					case 'F': *special_key = END;  break;
+					default: *special_key = 0; break;
+				}
+				return 0;
 			}
 		} else {
 			*s = buf;
