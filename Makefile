@@ -17,7 +17,7 @@ OUT := $(PROJECT)$(if $(filter Windows_NT,$(OS)),.exe,)
 WARNFLAGS := -Wall -Wextra -pedantic -Wshadow -Wconversion
 OPTFLAGS := -Os
 LTOFLAGS ?= -flto
-CSTD := -std=c89
+CSTD := -std=c17
 CPPFLAGS := -Iinclude -D_FILE_OFFSET_BITS=64
 CFLAGS += $(CSTD) $(CPPFLAGS) $(WARNFLAGS) $(OPTFLAGS) -pipe -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections -s

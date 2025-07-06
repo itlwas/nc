@@ -20,69 +20,73 @@
 #define LIKELY(x)   (x)
 #define UNLIKELY(x) (x)
 #endif
-#define YOC_VERSION "0.0.1"
-#define TRUE 1
-#define FALSE 0
-#define BUFF_SIZE 128
-#define MAXCHARLEN 6
-#define VSCROLL_MARGIN 3
-#define HSCROLL_MARGIN 5
+#define YOC_VERSION         "0.0.1"
+#define TRUE                1
+#define FALSE               0
+#define BUFF_SIZE           128
+#define MAXCHARLEN          6
+#define VSCROLL_MARGIN      3
+#define HSCROLL_MARGIN      5
 #define LINE_WIDTH_UNCACHED ((size_t)-1)
-#define SCREEN_ROWS(x) (((x) <= 1) ? 1 : ((x) - 1))
+#define SCREEN_ROWS(x)      (((x) <= 1) ? 1 : ((x) - 1))
 #define LINE_MBLEN_UNCACHED ((size_t)-1)
-#define LINE_INLINE_CAP 16
-#define CTRL_KEY(k) ((k) & 0x1f)
+#define LINE_INLINE_CAP     16
+#define CTRL_KEY(k)         ((k) & 0x1f)
 typedef int bool_t;
 typedef struct line_t Line;
 struct line_t {
-	unsigned char *s;
-	size_t len;
-	size_t cap;
-	size_t width;
-	size_t mb_len;
-	uint64_t hash;
-	unsigned char inline_space[LINE_INLINE_CAP];
-	Line *prev;
-	Line *next;
+    unsigned char *s;
+    size_t         len;
+    size_t         cap;
+    size_t         width;
+    size_t         mb_len;
+    uint64_t       hash;
+    unsigned char  inline_space[LINE_INLINE_CAP];
+    Line          *prev;
+    Line          *next;
 };
 typedef struct {
-	size_t x;
-	size_t y;
-	size_t rx;
+    size_t x;
+    size_t y;
+    size_t rx;
 } Pos;
 typedef struct {
-	Line *curr;
-	Line *begin;
-	size_t num_lines;
-	uint64_t digest;
+    Line    *curr;
+    Line    *begin;
+    size_t   num_lines;
+    uint64_t digest;
 } Buffer;
 typedef struct {
-	char *msg;
-	size_t len;
-	size_t cap;
+    char   *msg;
+    size_t  len;
+    size_t  cap;
 } Status;
-enum S_Mode { NORMAL, INPUT_MODE, MESSAGE };
-extern enum S_Mode status_mode;
+typedef enum {
+    NORMAL,
+    INPUT_MODE,
+    MESSAGE
+} S_Mode;
+extern S_Mode status_mode;
 typedef struct {
-	size_t cap;
-	char *path;
-	Buffer buffer;
-	Pos cursor;
-	Status status;
-	uint64_t saved_digest;
-	bool_t is_modified;
+    size_t    cap;
+    char     *path;
+    Buffer    buffer;
+    Pos       cursor;
+    Status    status;
+    uint64_t  saved_digest;
+    bool_t    is_modified;
 } File;
 typedef struct {
-	File file;
-	size_t tabsize;
-	Pos window;
-	Line *top_line;
-	size_t rows;
-	size_t cols;
-	char **screen_lines;
-	size_t *screen_lens;
-	size_t screen_rows;
-	size_t screen_cols;
+    File     file;
+    size_t   tabsize;
+    Pos      window;
+    Line    *top_line;
+    size_t   rows;
+    size_t   cols;
+    char   **screen_lines;
+    size_t  *screen_lens;
+    size_t   screen_rows;
+    size_t   screen_cols;
 } Editor;
 extern Editor editor;
 extern bool_t show_line_numbers;
@@ -92,11 +96,11 @@ extern HANDLE hOut;
 ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 #endif
 enum key {
-	BACKSPACE = 8, TAB, ENTER = 13, ESC = 27,
-	PAGE_UP = 33, PAGE_DOWN, END, HOME,
-	ARROW_LEFT, ARROW_UP, ARROW_RIGHT, ARROW_DOWN,
-	DEL = 46,
-	CTRL_END = 100, CTRL_HOME, CTRL_ARROW_LEFT, CTRL_ARROW_UP, CTRL_ARROW_RIGHT, CTRL_ARROW_DOWN
+	BACKSPACE = 8, TAB, ENTER = 13, ESC = 27, PAGE_UP = 33,
+	PAGE_DOWN, END, HOME, ARROW_LEFT, ARROW_UP, ARROW_RIGHT,
+	ARROW_DOWN, DEL = 46, CTRL_END = 100, CTRL_HOME,
+	CTRL_ARROW_LEFT, CTRL_ARROW_UP, CTRL_ARROW_RIGHT,
+	CTRL_ARROW_DOWN
 };
 void die(const char *msg);
 void *xmalloc(size_t size);
