@@ -29,6 +29,7 @@ void file_load(File *file) {
 	Buffer *buf = &file->buffer;
 	f = fopen(file->path, "rb");
 	if (!f) die("fopen");
+	setvbuf(f, NULL, _IOFBF, 65536);
 	buf->digest = 0;
 	while ((line_len = getline(&line, &line_cap, f)) != -1) {
 		had_trailing_newline = FALSE;
