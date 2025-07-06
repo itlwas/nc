@@ -16,6 +16,7 @@ DEP := $(OBJ:.o=.d)
 OUT := $(PROJECT)$(if $(filter Windows_NT,$(OS)),.exe,)
 WARNFLAGS := -Wall -Wextra -pedantic -Wshadow -Wconversion
 OPTFLAGS := -Os
+LTOFLAGS ?= -flto
 CSTD := -std=c89
 CPPFLAGS := -Iinclude -D_FILE_OFFSET_BITS=64
 CFLAGS += $(CSTD) $(CPPFLAGS) $(WARNFLAGS) $(OPTFLAGS) -pipe -ffunction-sections -fdata-sections
@@ -23,7 +24,8 @@ LDFLAGS += -Wl,--gc-sections -s
 DEBUG_FLAGS := -O0 -g -DDEBUG
 RELEASE_FLAGS := -DNDEBUG
 all: release
-release: CFLAGS += $(RELEASE_FLAGS)
+release: CFLAGS += $(RELEASE_FLAGS) $(LTOFLAGS)
+release: LDFLAGS += $(LTOFLAGS)
 release: build
 debug: CFLAGS += $(DEBUG_FLAGS)
 debug: LDFLAGS +=

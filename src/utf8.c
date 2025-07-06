@@ -3,14 +3,14 @@
 #include <string.h>
 static int is_word_char(const unsigned char *s);
 size_t utf8_len(unsigned char c) {
-	if ((c & 0x80u) == 0) return 1;
-	if ((c & 0xE0u) == 0xC0u && c >= 0xC2u) return 2;
-	if ((c & 0xF0u) == 0xE0u) return 3;
-	if ((c & 0xF8u) == 0xF0u && c <= 0xF4u) return 4;
+	if (LIKELY((c & 0x80u) == 0)) return 1;
+	if (LIKELY((c & 0xE0u) == 0xC0u) && LIKELY(c >= 0xC2u)) return 2;
+	if (LIKELY((c & 0xF0u) == 0xE0u)) return 3;
+	if (LIKELY((c & 0xF8u) == 0xF0u) && LIKELY(c <= 0xF4u)) return 4;
 	return 0;
 }
 bool_t is_continuation_byte(unsigned char c) {
-	return (c & 0xC0u) == 0x80u;
+	return (bool_t)LIKELY((c & 0xC0u) == 0x80u);
 }
 bool_t is_alnum_mbchar(const unsigned char *s) {
 	if ((*s & 0x80u) == 0)
@@ -22,10 +22,14 @@ size_t move_mbleft(const unsigned char *s, size_t pos) {
 	return pos;
 }
 size_t move_mbright(const unsigned char *s, size_t pos) {
-	if (s[pos] == '\0')
+	unsigned char c = s[pos];
+	size_t len;
+	if (c == '\0')
 		return pos;
-	++pos;
-	while (s[pos] != '\0' && is_continuation_byte(s[pos]))
+	len = utf8_len(c);
+	if (len == 0)
+		len = 1;
+	while (len-- && s[pos] != '\0')
 		++pos;
 	return pos;
 }

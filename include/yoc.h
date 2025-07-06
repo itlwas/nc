@@ -13,6 +13,13 @@
 #include <sys/types.h>
 #include <termios.h>
 #endif
+#if defined(__GNUC__) || defined(__clang__)
+#define LIKELY(x)   __builtin_expect(!!(x), 1)
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)
+#else
+#define LIKELY(x)   (x)
+#define UNLIKELY(x) (x)
+#endif
 #define YOC_VERSION "0.0.1"
 #define TRUE 1
 #define FALSE 0
