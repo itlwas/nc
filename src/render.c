@@ -1,7 +1,6 @@
 #include "yoc.h"
 #include <string.h>
 #include <stdio.h>
-static const unsigned char SCROLLBAR_CHAR[] = "¦";
 static void render_main(void);
 static void render_rows(void);
 static void render_status_bar(void);
@@ -181,7 +180,7 @@ static void render_rows(void) {
 		if (scrollbar) {
 			term_set_cursor(editor.cols - 1, y);
 			if (y >= bar_start && y < bar_start + bar_height)
-				term_write(SCROLLBAR_CHAR, sizeof(SCROLLBAR_CHAR) - 1);
+				term_write((const unsigned char *)"|", 1);
 			else
 				term_write((const unsigned char *)" ", 1);
 		}
@@ -227,41 +226,26 @@ static void ensure_screen_buffer(void) {
 	}
 }
 static void draw_line(size_t row, const unsigned char *line, size_t len) {
-	size_t prev_len;
-	size_t i;
-	size_t rx_common;
-	size_t new_width, clear_from, clear_to;
-	if (row >= editor.screen_rows) return;
+	size_t prev_len, common_len;
+	size_t common_width, new_width, old_width;
+	if (row >= editor.screen_rows)
+		return;
 	prev_len = editor.screen_lens[row];
-	if (prev_len == len && memcmp(editor.screen_lines[row], line, len) == 0) return;
-	i = 0;
-	rx_common = 0;
-	while (i < prev_len && i < len) {
-		size_t char_len, prev_char_len;
-		unsigned char c = (unsigned char)editor.screen_lines[row][i];
-		unsigned char new_c = line[i];
-		if (c != new_c) break;
-		if (c == '\t') {
-			rx_common += editor.tabsize - (rx_common % editor.tabsize);
-			i++;
-			continue;
-		}
-		char_len = utf8_len(c);
-		prev_char_len = utf8_len(new_c);
-		if (char_len == 0 || prev_char_len == 0 || char_len != prev_char_len) break;
-		if (i + char_len > prev_len || i + char_len > len) break;
-		if (memcmp(editor.screen_lines[row] + i, line + i, char_len) != 0) break;
-		rx_common += char_display_width(&line[i]);
-		i += char_len;
-	}
-	term_set_cursor(rx_common, row);
-	if (i < len)
-		term_write(line + i, len - i);
-	new_width = rx_common + length_to_width(line + i, len - i);
-	clear_from = new_width;
-	clear_to = str_width((unsigned char *)editor.screen_lines[row], prev_len);
-	if (clear_from < clear_to)
-		term_write((unsigned char *)spaces, clear_to - clear_from);
+	if (prev_len == len && memcmp(editor.screen_lines[row], line, len) == 0)
+		return;
+	common_len = 0;
+	while (common_len < prev_len && common_len < len && editor.screen_lines[row][common_len] == line[common_len])
+		common_len++;
+	while (common_len > 0 && is_continuation_byte(line[common_len]))
+		common_len--;
+	common_width = length_to_width((unsigned char *)editor.screen_lines[row], common_len);
+	term_set_cursor(common_width, row);
+	if (common_len < len)
+		term_write(line + common_len, len - common_len);
+	new_width = common_width + length_to_width(line + common_len, len - common_len);
+	old_width = length_to_width((unsigned char *)editor.screen_lines[row], prev_len);
+	if (new_width < old_width)
+		term_write((unsigned char *)spaces, old_width - new_width);
 	if (len > editor.cols * MAXCHARLEN)
 		len = editor.cols * MAXCHARLEN;
 	memcpy(editor.screen_lines[row], line, len);
