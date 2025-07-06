@@ -1,16 +1,8 @@
 #include "yoc.h"
 #include <string.h>
 Editor editor;
-static void init(char *file_path);
 int main(int argc, char **argv) {
-	init(argc > 1 ? argv[1] : NULL);
-	while (1) {
-		render_refresh();
-		edit_process_key();
-	}
-	return 0;
-}
-static void init(char *file_path) {
+	char *file_path = argc > 1 ? argv[1] : NULL;
 	editor.tabsize = 4;
 	editor.window.x = 0;
 	editor.window.y = 0;
@@ -37,4 +29,9 @@ static void init(char *file_path) {
 		}
 	}
 	term_init();
+	while (1) {
+		render_refresh();
+		edit_process_key();
+	}
+	return 0;
 }
