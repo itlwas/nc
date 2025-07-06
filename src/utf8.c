@@ -157,10 +157,7 @@ static int is_word_char(const unsigned char *s) {
 	if (s[0] == '\0' || isspace((unsigned char)s[0]))
 		return 0;
 	if ((s[0] & 0x80u) != 0) {
-		size_t len = utf8_len(s[0]);
-		if (len == 0)
-			return 0;
-		return s[1] == '\0' || !is_continuation_byte(s[1]);
+		return utf8_len(s[0]) > 0;
 	}
 	return !ispunct((unsigned char)s[0]);
 }
