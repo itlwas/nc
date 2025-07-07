@@ -147,19 +147,14 @@ size_t length_to_width(const unsigned char *s, size_t len) {
     size_t col = 0;
     for (size_t i = 0; i < len;) {
         unsigned char c = s[i];
-        size_t char_len = 1;
         if (c == '\t') {
             col += editor.tabsize - (col % editor.tabsize);
-        } else if ((c & 0x80u) == 0) {
-            col++;
-        } else {
-            char_len = utf8_len(c);
-            if (char_len > 0) {
-                col++;
-            } else {
-                char_len = 1;
-            }
+            ++i;
+            continue;
         }
+        size_t char_len = utf8_len(c);
+        if (char_len == 0) char_len = 1;
+        col += char_display_width(&s[i]);
         i += char_len;
     }
     return col;
@@ -169,23 +164,18 @@ size_t width_to_length(const unsigned char *s, size_t width) {
     size_t col = 0;
     while (s[len] != '\0' && col < width) {
         unsigned char c = s[len];
-        size_t char_len = 1;
         if (c == '\t') {
             size_t tab_w = editor.tabsize - (col % editor.tabsize);
             if (col + tab_w > width) break;
             col += tab_w;
-        } else if ((c & 0x80u) == 0) {
-            if (col + 1 > width) break;
-            col++;
-        } else {
-            char_len = utf8_len(c);
-            if (char_len > 0) {
-                if (col + 1 > width) break;
-                col++;
-            } else {
-                char_len = 1;
-            }
+            ++len;
+            continue;
         }
+        size_t char_len = utf8_len(c);
+        if (char_len == 0) char_len = 1;
+        size_t char_w  = char_display_width(&s[len]);
+        if (col + char_w > width) break;
+        col += char_w;
         len += char_len;
     }
     return len;
