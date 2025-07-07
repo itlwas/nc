@@ -164,6 +164,13 @@ size_t length_to_width(const unsigned char *s, size_t len) {
             ++i;
             continue;
         }
+        if (LIKELY(c < 0x80u)) {
+            if (c >= 0x20u && c != 0x7Fu) {
+                ++col;
+            }
+            ++i;
+            continue;
+        }
         size_t char_len = utf8_len(c);
         if (char_len == 0) char_len = 1;
         col += char_display_width(&s[i]);
@@ -180,6 +187,13 @@ size_t width_to_length(const unsigned char *s, size_t width) {
             size_t tab_w = editor.tabsize - (col % editor.tabsize);
             if (col + tab_w > width) break;
             col += tab_w;
+            ++len;
+            continue;
+        }
+        if (LIKELY(c < 0x80u)) {
+            size_t char_w = (c >= 0x20u && c != 0x7Fu) ? 1u : 0u;
+            if (col + char_w > width) break;
+            col += char_w;
             ++len;
             continue;
         }
