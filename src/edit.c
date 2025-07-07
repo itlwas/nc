@@ -166,7 +166,12 @@ void edit_backspace(void) {
         size_t first_nb_mb = index_to_mbnum(line->s, first_nb_idx);
         if (editor.file.cursor.x <= first_nb_mb) {
             size_t cur_rx = x_to_rx(line, editor.file.cursor.x);
-            size_t target_rx = (cur_rx == 0) ? 0 : (cur_rx - 1) & ~(editor.tabsize - 1);
+            size_t target_rx;
+            if (cur_rx == 0) {
+                target_rx = 0;
+            } else {
+                target_rx = ((cur_rx - 1) / editor.tabsize) * editor.tabsize;
+            }
             size_t target_x = rx_to_x(line, target_rx);
             if (target_x < editor.file.cursor.x) {
                 size_t start_idx = mbnum_to_index(line->s, target_x);
