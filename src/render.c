@@ -182,11 +182,15 @@ static void render_rows(void) {
                     size_t char_width;
                     if (c < 0x80u) {
                         char_len   = 1;
-                        char_width = 1;
+                        char_width = char_display_width(s + i);
                     } else {
                         char_len = utf8_len(c);
                         if (char_len == 0 || i + char_len > line->len) char_len = 1;
                         char_width = char_display_width(s + i);
+                    }
+                    if (char_width == 0) {
+                        i += char_len;
+                        continue;
                     }
                     if (width + char_width > editor.window.x + text_cols) break;
                     if (width >= editor.window.x && pos + char_len < rowbuf_cap) {
