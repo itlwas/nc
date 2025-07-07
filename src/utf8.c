@@ -35,6 +35,15 @@ static int is_wide_cp(uint32_t cp) {
 			(cp >= 0x20000u && cp <= 0x3FFFDu)))
 	);
 }
+static int is_combining_cp(uint32_t cp) {
+	return (
+		(cp >= 0x0300u && cp <= 0x036Fu)  ||
+		(cp >= 0x1AB0u && cp <= 0x1AFFu)  ||
+		(cp >= 0x1DC0u && cp <= 0x1DFFu)  ||
+		(cp >= 0x20D0u && cp <= 0x20FFu)  ||
+		(cp >= 0xFE20u && cp <= 0xFE2Fu)
+	);
+}
 static int is_word_char(const unsigned char *s);
 size_t utf8_len(unsigned char c) {
     if (LIKELY((c & 0x80u) == 0)) return 1;
@@ -92,12 +101,15 @@ size_t mbnum_to_index(const unsigned char *s, size_t n) {
 size_t char_display_width(const unsigned char *s) {
 	unsigned char c = *s;
 	if (LIKELY(c < 0x80u)) {
-		return (c < 0x20u) ? 0u : 1u;
+		return (c < 0x20u || c == 0x7Fu) ? 0u : 1u;
 	}
 	if (is_continuation_byte(c)) {
 		return 0u;
 	}
 	uint32_t cp = decode_utf8(s);
+	if (is_combining_cp(cp)) {
+		return 0u;
+	}
 	return is_wide_cp(cp) ? 2u : 1u;
 }
 size_t x_to_rx(Line *line, size_t x) {
