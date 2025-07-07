@@ -65,6 +65,9 @@ void buf_del_line(Buffer *buffer, Line *line) {
     if (buffer->begin == line) {
         buffer->begin = line->next;
     }
+    if (UNLIKELY(editor.top_line == line)) {
+        editor.top_line = line->next ? line->next : line->prev;
+    }
     if (buffer->curr == line) {
         buffer->curr = line->next ? line->next : line->prev;
     }
@@ -81,6 +84,7 @@ void buf_del_line(Buffer *buffer, Line *line) {
         buffer->curr = buffer->begin;
         buffer->num_lines = 1;
         buffer->digest = buffer->begin->hash;
+        editor.top_line = buffer->begin;
     } else if (!buffer->curr) {
         buffer->curr = buffer->begin;
     }
