@@ -147,21 +147,7 @@ void line_del_char(Line *line, size_t at) {
 }
 void line_insert_str(Line *line, size_t at, const unsigned char *str) {
     size_t str_len = strlen((const char *)str);
-    if (str_len == 0) {
-        return;
-    }
-    if (at > line->len) {
-        at = line->len;
-    }
-    line_reserve(line, str_len);
-    if (at < line->len) {
-        memmove(line->s + at + str_len, line->s + at, line->len - at + 1);
-    }
-    memcpy(line->s + at, str, str_len);
-    line->len += str_len;
-    line->s[line->len] = '\0';
-    line->width = LINE_WIDTH_UNCACHED;
-    line->mb_len = LINE_MBLEN_UNCACHED;
+    line_insert_strn(line, at, str, str_len);
 }
 void line_insert_strn(Line *line, size_t at, const unsigned char *str, size_t len) {
     if (len == 0) {
