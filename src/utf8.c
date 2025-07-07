@@ -99,12 +99,22 @@ size_t mbnum_to_index(const unsigned char *s, size_t n) {
     return pos;
 }
 size_t char_display_width(const unsigned char *s) {
-	unsigned char c = *s;
-	if (LIKELY(c < 0x80u)) {
-		return (c < 0x20u || c == 0x7Fu) ? 0u : 1u;
+	unsigned char c0 = s[0];
+	if (LIKELY(c0 < 0x80u)) {
+		return (c0 < 0x20u || c0 == 0x7Fu) ? 0u : 1u;
 	}
-	if (is_continuation_byte(c)) {
+	if (is_continuation_byte(c0)) {
 		return 0u;
+	}
+	size_t len = utf8_len(c0);
+	if (len == 0) {
+		return 1u;
+	}
+	for (size_t i = 1; i < len; ++i) {
+		unsigned char ci = s[i];
+		if (ci == '\0' || !is_continuation_byte(ci)) {
+			return 1u;
+		}
 	}
 	uint32_t cp = decode_utf8(s);
 	if (is_combining_cp(cp)) {
