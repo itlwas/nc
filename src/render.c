@@ -32,6 +32,10 @@ void render_refresh(void) {
     term_show_cursor();
 }
 void render_scroll(void) {
+    if (editor.top_line == NULL) {
+        editor.top_line = editor.file.buffer.begin;
+    }
+    size_t old_window_y = editor.window.y;
     size_t margin = VSCROLL_MARGIN;
     if (editor.rows <= VSCROLL_MARGIN * 2) {
         margin = 0;
@@ -53,14 +57,25 @@ void render_scroll(void) {
         editor.window.x =
             editor.file.cursor.rx - (editor.cols - (show_line_numbers ? lineno_pad : 0)) + HSCROLL_MARGIN + 1;
     }
-    if (editor.file.buffer.curr != editor.top_line) {
-        Line  *line = editor.file.buffer.begin;
-        size_t y    = 0;
-        while (y < editor.window.y && line->next) {
-            line = line->next;
-            y++;
+    if (editor.file.buffer.curr != editor.top_line || old_window_y != editor.window.y) {
+        long diff = (long)editor.window.y - (long)old_window_y;
+        while (diff > 0 && editor.top_line && editor.top_line->next) {
+            editor.top_line = editor.top_line->next;
+            --diff;
         }
-        editor.top_line = line;
+        while (diff < 0 && editor.top_line && editor.top_line->prev) {
+            editor.top_line = editor.top_line->prev;
+            ++diff;
+        }
+        if (diff != 0) {
+            Line *line = editor.file.buffer.begin;
+            size_t y = 0;
+            while (y < editor.window.y && line->next) {
+                line = line->next;
+                ++y;
+            }
+            editor.top_line = line;
+        }
     }
 }
 static void render_main(void) {
