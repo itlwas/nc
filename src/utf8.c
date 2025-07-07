@@ -1,6 +1,40 @@
 #include "yoc.h"
 #include <ctype.h>
 #include <string.h>
+#include <stdint.h>
+static uint32_t decode_utf8(const unsigned char *s) {
+	unsigned char c0 = s[0];
+	if ((c0 & 0x80u) == 0)
+		return c0;
+	if ((c0 & 0xE0u) == 0xC0u)
+		return ((uint32_t)(c0 & 0x1Fu) << 6) | (uint32_t)(s[1] & 0x3Fu);
+	if ((c0 & 0xF0u) == 0xE0u)
+		return ((uint32_t)(c0 & 0x0Fu) << 12) |
+			((uint32_t)(s[1] & 0x3Fu) << 6) |
+			(uint32_t)(s[2] & 0x3Fu);
+	if ((c0 & 0xF8u) == 0xF0u)
+		return ((uint32_t)(c0 & 0x07u) << 18) |
+			((uint32_t)(s[1] & 0x3Fu) << 12) |
+			((uint32_t)(s[2] & 0x3Fu) << 6) |
+			(uint32_t)(s[3] & 0x3Fu);
+	return 0xFFFDu;
+}
+static int is_wide_cp(uint32_t cp) {
+	return (
+		(cp >= 0x1100u && (cp <= 0x115Fu ||
+			cp == 0x2329u || cp == 0x232Au ||
+			(cp >= 0x2E80u && cp <= 0xA4CFu) ||
+			(cp >= 0xAC00u && cp <= 0xD7A3u) ||
+			(cp >= 0xF900u && cp <= 0xFAFFu) ||
+			(cp >= 0xFE10u && cp <= 0xFE19u) ||
+			(cp >= 0xFE30u && cp <= 0xFE6Fu) ||
+			(cp >= 0xFF00u && cp <= 0xFF60u) ||
+			(cp >= 0xFFE0u && cp <= 0xFFE6u) ||
+			(cp >= 0x1F300u && cp <= 0x1F64Fu) ||
+			(cp >= 0x1F900u && cp <= 0x1F9FFu) ||
+			(cp >= 0x20000u && cp <= 0x3FFFDu)))
+	);
+}
 static int is_word_char(const unsigned char *s);
 size_t utf8_len(unsigned char c) {
     if (LIKELY((c & 0x80u) == 0)) return 1;
@@ -56,12 +90,15 @@ size_t mbnum_to_index(const unsigned char *s, size_t n) {
     return pos;
 }
 size_t char_display_width(const unsigned char *s) {
-    unsigned char c = *s;
-    if (c < 0x20) return 0;
-    if ((c & 0x80u) == 0) return 1;
-    if (is_continuation_byte(c)) return 0;
-    if (utf8_len(c) > 0) return 1;
-    return 0;
+	unsigned char c = *s;
+	if (LIKELY(c < 0x80u)) {
+		return (c < 0x20u) ? 0u : 1u;
+	}
+	if (is_continuation_byte(c)) {
+		return 0u;
+	}
+	uint32_t cp = decode_utf8(s);
+	return is_wide_cp(cp) ? 2u : 1u;
 }
 size_t x_to_rx(Line *line, size_t x) {
     size_t rx = 0;
