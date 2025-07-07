@@ -479,7 +479,12 @@ static void edit_goto_line(void) {
     line_free(input);
 }
 static bool_t is_blank(Line *line) {
-    return line->len == 0;
+    for (size_t i = 0; i < line->len; ++i) {
+        if (line->s[i] != ' ' && line->s[i] != '\t') {
+            return FALSE;
+        }
+    }
+    return TRUE;
 }
 static void pre_line_change(Line *line) {
     editor.file.buffer.digest -= line->hash;
