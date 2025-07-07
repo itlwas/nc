@@ -12,6 +12,7 @@ static char    *spaces                 = NULL;
 static size_t   spaces_cap             = 0;
 static size_t   lineno_pad             = 0;
 static bool_t   prev_scrollbar_visible = FALSE;
+static uint64_t cached_digest          = 0;
 bool_t          show_line_numbers      = TRUE;
 void render_refresh(void) {
     size_t digits = 1;
@@ -32,6 +33,7 @@ void render_refresh(void) {
     term_show_cursor();
 }
 void render_scroll(void) {
+    bool_t buffer_changed = (editor.file.buffer.digest != cached_digest);
     if (editor.top_line == NULL) {
         editor.top_line = editor.file.buffer.begin;
     }
@@ -57,7 +59,11 @@ void render_scroll(void) {
         editor.window.x =
             editor.file.cursor.rx - (editor.cols - (show_line_numbers ? lineno_pad : 0)) + HSCROLL_MARGIN + 1;
     }
-    if (editor.file.buffer.curr != editor.top_line || old_window_y != editor.window.y) {
+    if (
+        editor.file.buffer.curr != editor.top_line ||
+        old_window_y != editor.window.y ||
+        (buffer_changed && old_window_y == editor.window.y)
+    ) {
         long diff = (long)editor.window.y - (long)old_window_y;
         while (diff > 0 && editor.top_line && editor.top_line->next) {
             editor.top_line = editor.top_line->next;
@@ -77,6 +83,7 @@ void render_scroll(void) {
             editor.top_line = line;
         }
     }
+    cached_digest = editor.file.buffer.digest;
 }
 static void render_main(void) {
     term_hide_cursor();
