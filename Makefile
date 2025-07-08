@@ -28,7 +28,7 @@ release: CFLAGS += $(RELEASE_FLAGS) $(LTOFLAGS)
 release: LDFLAGS += $(LTOFLAGS)
 release: build
 debug: CFLAGS += $(DEBUG_FLAGS)
-debug: LDFLAGS +=
+debug: LDFLAGS :=
 debug: build
 build: $(OUT)
 $(OUT): $(OBJ)
