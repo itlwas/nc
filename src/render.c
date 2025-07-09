@@ -73,7 +73,7 @@ void render_scroll(void) {
             editor.top_line = editor.top_line->prev;
             ++diff;
         }
-        if (diff != 0) {
+        if (diff != 0 || buffer_changed) {
             Line *line = editor.file.buffer.begin;
             size_t y = 0;
             while (y < editor.window.y && line->next) {
