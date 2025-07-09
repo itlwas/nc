@@ -88,13 +88,6 @@ void buf_del_line(Buffer *buffer, Line *line) {
     } else if (!buffer->curr) {
         buffer->curr = buffer->begin;
     }
-    {
-        uint64_t sum = 0;
-        for (Line *l = buffer->begin; l; l = l->next) {
-            sum += l->hash;
-        }
-        buffer->digest = sum;
-    }
     editor.file.is_modified = (buffer->digest != editor.file.saved_digest);
 }
 Line *line_new(Line *prev, Line *next) {
