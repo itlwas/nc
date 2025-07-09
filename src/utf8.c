@@ -4,19 +4,38 @@
 #include <stdint.h>
 static uint32_t decode_utf8(const unsigned char *s) {
 	unsigned char c0 = s[0];
-	if ((c0 & 0x80u) == 0)
+	if ((c0 & 0x80u) == 0) {
 		return c0;
-	if ((c0 & 0xE0u) == 0xC0u)
-		return ((uint32_t)(c0 & 0x1Fu) << 6) | (uint32_t)(s[1] & 0x3Fu);
-	if ((c0 & 0xF0u) == 0xE0u)
+	}
+	if ((c0 & 0xE0u) == 0xC0u) {
+		unsigned char c1 = s[1];
+		if (!is_continuation_byte(c1)) return 0xFFFDu;
+		return ((uint32_t)(c0 & 0x1Fu) << 6) | (uint32_t)(c1 & 0x3Fu);
+	}
+	if ((c0 & 0xF0u) == 0xE0u) {
+		unsigned char c1 = s[1];
+		unsigned char c2 = s[2];
+		if (!is_continuation_byte(c1) || !is_continuation_byte(c2)) return 0xFFFDu;
 		return ((uint32_t)(c0 & 0x0Fu) << 12) |
-			((uint32_t)(s[1] & 0x3Fu) << 6) |
-			(uint32_t)(s[2] & 0x3Fu);
-	if ((c0 & 0xF8u) == 0xF0u)
+			((uint32_t)(c1 & 0x3Fu) << 6) |
+			(uint32_t)(c2 & 0x3Fu);
+	}
+	if ((c0 & 0xF8u) == 0xF0u) {
+		unsigned char c1 = s[1];
+		unsigned char c2 = s[2];
+		unsigned char c3 = s[3];
+		if (
+			!is_continuation_byte(c1) ||
+			!is_continuation_byte(c2) ||
+			!is_continuation_byte(c3)
+		) {
+			return 0xFFFDu;
+		}
 		return ((uint32_t)(c0 & 0x07u) << 18) |
-			((uint32_t)(s[1] & 0x3Fu) << 12) |
-			((uint32_t)(s[2] & 0x3Fu) << 6) |
-			(uint32_t)(s[3] & 0x3Fu);
+			((uint32_t)(c1 & 0x3Fu) << 12) |
+			((uint32_t)(c2 & 0x3Fu) << 6) |
+			(uint32_t)(c3 & 0x3Fu);
+	}
 	return 0xFFFDu;
 }
 static int is_wide_cp(uint32_t cp) {
