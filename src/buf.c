@@ -84,10 +84,18 @@ void buf_del_line(Buffer *buffer, Line *line) {
         buffer->curr = buffer->begin;
         buffer->num_lines = 1;
         buffer->digest = buffer->begin->hash;
-        editor.top_line = buffer->begin;
+        editor.file.saved_digest = buffer->digest;
     } else if (!buffer->curr) {
         buffer->curr = buffer->begin;
     }
+    {
+        uint64_t sum = 0;
+        for (Line *l = buffer->begin; l; l = l->next) {
+            sum += l->hash;
+        }
+        buffer->digest = sum;
+    }
+    editor.file.is_modified = (buffer->digest != editor.file.saved_digest);
 }
 Line *line_new(Line *prev, Line *next) {
     Line *line = (Line *)xmalloc(sizeof(Line));
