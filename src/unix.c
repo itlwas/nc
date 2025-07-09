@@ -48,6 +48,21 @@ size_t term_read(unsigned char **s, int *special_key) {
     buf[nread] = '\0';
     if (buf[0] == '\x1b') {
         if (nread == 1) {
+            int pending = 0;
+            if (ioctl(STDIN_FILENO, FIONREAD, &pending) == 0 && pending > 0) {
+                ssize_t remaining = (ssize_t)(sizeof(buf) - 1) - nread;
+                if (remaining < 0) remaining = 0;
+                if (pending > remaining) {
+                    pending = (int)remaining;
+                }
+                ssize_t extra = read(STDIN_FILENO, buf + nread, (size_t)pending);
+                if (extra > 0) {
+                    nread += extra;
+                    buf[nread] = '\0';
+                }
+            }
+        }
+        if (nread == 1) {
             *special_key = ESC;
         } else if (buf[1] == '[') {
             if (nread == 3) {
