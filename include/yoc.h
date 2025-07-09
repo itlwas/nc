@@ -20,7 +20,7 @@
 #define LIKELY(x)   (x)
 #define UNLIKELY(x) (x)
 #endif
-#define YOC_VERSION         "0.0.1"
+#define YOC_VERSION         "1.0.0"
 #define TRUE                1
 #define FALSE               0
 #define BUFF_SIZE           128
