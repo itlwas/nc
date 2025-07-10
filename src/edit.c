@@ -27,26 +27,22 @@ void edit_move_end(void) {
 }
 void edit_move_up(void) {
     if (editor.file.cursor.y > 0) {
-        if (desired_rx == PREFERRED_COL_UNSET) {
-            desired_rx = editor.file.cursor.rx;
-        }
         editor.file.buffer.curr = editor.file.buffer.curr->prev;
         --editor.file.cursor.y;
-        editor.file.cursor.x = rx_to_x(editor.file.buffer.curr, desired_rx);
+        editor.file.cursor.x = rx_to_x(editor.file.buffer.curr, desired_rx == PREFERRED_COL_UNSET ? editor.file.cursor.rx : desired_rx);
         edit_fix_cursor_x();
         editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+        if (desired_rx == PREFERRED_COL_UNSET) desired_rx = editor.file.cursor.rx;
     }
 }
 void edit_move_down(void) {
     if (editor.file.cursor.y < editor.file.buffer.num_lines - 1) {
-        if (desired_rx == PREFERRED_COL_UNSET) {
-            desired_rx = editor.file.cursor.rx;
-        }
         editor.file.buffer.curr = editor.file.buffer.curr->next;
         ++editor.file.cursor.y;
-        editor.file.cursor.x = rx_to_x(editor.file.buffer.curr, desired_rx);
+        editor.file.cursor.x = rx_to_x(editor.file.buffer.curr, desired_rx == PREFERRED_COL_UNSET ? editor.file.cursor.rx : desired_rx);
         edit_fix_cursor_x();
         editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
+        if (desired_rx == PREFERRED_COL_UNSET) desired_rx = editor.file.cursor.rx;
     }
 }
 void edit_move_left(void) {
