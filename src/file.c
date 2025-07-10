@@ -34,13 +34,8 @@ void file_load(File *file) {
     buf->digest = 0;
     while ((line_len = getline(&line, &line_cap, f)) != -1) {
         had_trailing_newline = FALSE;
-        if (line_len > 0 && line[line_len - 1] == '\n') {
-            line_len--;
-            had_trailing_newline = TRUE;
-        }
-        if (line_len > 0 && line[line_len - 1] == '\r') {
-            line_len--;
-        }
+        if (line_len > 0 && line[line_len - 1] == '\n') line_len--, had_trailing_newline = TRUE;
+        if (line_len > 0 && line[line_len - 1] == '\r') line_len--;
         if (first_line) {
             line_insert_strn(buf->curr, 0, (unsigned char *)line, (size_t)line_len);
             buf->curr->hash = fnv1a_hash(buf->curr->s, buf->curr->len);
@@ -55,7 +50,7 @@ void file_load(File *file) {
             buf->digest += newline->hash;
         }
     }
-    if (had_trailing_newline) {
+    if (had_trailing_newline && buf->curr->len > 0) {
         Line *newline = line_new(buf->curr, NULL);
         buf->curr = newline;
         buf->num_lines++;
@@ -79,11 +74,6 @@ void file_save(File *file) {
         fwrite(line->s, 1, line->len, f);
         if (line->next) {
             fputc('\n', f);
-        } else if (line->len > 0) {
-            fputc('\n', f);
-            line_new(line, NULL);
-            file->buffer.num_lines++;
-            file->buffer.digest += line->next->hash;
         }
     }
     fclose(f);
