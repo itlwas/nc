@@ -12,17 +12,12 @@ uint64_t fnv1a_hash(const unsigned char *s, size_t len) {
     return hash;
 }
 static size_t calc_capacity(size_t current, size_t required) {
-    if (current < LINE_INLINE_CAP) {
-        current = LINE_INLINE_CAP;
+    size_t cap = (current < LINE_INLINE_CAP) ? LINE_INLINE_CAP : current;
+    while (cap < required) {
+        cap *= 2;
+        if (cap == 0) cap = LINE_INLINE_CAP;
     }
-    while (current < required) {
-        size_t candidate = (current < 1024) ? (current << 1) : (current + (current >> 1));
-        if (candidate <= current || candidate > (size_t)-1 / 2) {
-            return required;
-        }
-        current = candidate;
-    }
-    return current;
+    return cap > required ? cap : required;
 }
 static void line_reserve(Line *line, size_t additional) {
     size_t required = line->len + additional + 1;
