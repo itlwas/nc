@@ -1,5 +1,6 @@
 #include "yoc.h"
 #include <string.h>
+#include <limits.h>
 #define STATUS_BG_ON  "\x1b[47m\x1b[30m"
 #define STATUS_BG_OFF "\x1b[0m"
 const char *extract_filename(const char *path) {
@@ -133,9 +134,13 @@ static void status_input_print(StatusInput *statin) {
 }
 static void status_realloc(size_t len) {
     if (len >= editor.file.status.cap) {
-        size_t new_cap = editor.file.status.cap;
+        size_t new_cap = (editor.file.status.cap == 0) ? BUFF_SIZE : editor.file.status.cap;
         while (len >= new_cap) {
-            new_cap = new_cap == 0 ? BUFF_SIZE : new_cap * 2;
+            if (LIKELY(new_cap <= SIZE_MAX / 2)) {
+                new_cap *= 2;
+            } else {
+                new_cap = len + 1;
+            }
         }
         editor.file.status.msg = (char *)xrealloc(editor.file.status.msg, new_cap);
         editor.file.status.cap = new_cap;
