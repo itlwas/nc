@@ -1,6 +1,7 @@
 #include "yoc.h"
 #include <string.h>
 #include <stdio.h>
+#include <limits.h>
 static void render_main(void);
 static void render_rows(void);
 static void render_status_bar(void);
@@ -245,15 +246,20 @@ static void ensure_screen_buffer(void) {
     }
     editor.screen_lines = (char **)xmalloc(rows_needed * sizeof(char *));
     editor.screen_lens  = (size_t *)xmalloc(rows_needed * sizeof(size_t));
+    size_t line_cap;
+    if (UNLIKELY(editor.cols > (SIZE_MAX - 1) / MAXCHARLEN)) {
+        die("terminal width too large");
+    }
+    line_cap = editor.cols * MAXCHARLEN + 1;
     for (size_t r = 0; r < rows_needed; ++r) {
-        editor.screen_lines[r] = (char *)xmalloc((editor.cols * MAXCHARLEN) + 1);
+        editor.screen_lines[r] = (char *)xmalloc(line_cap);
         editor.screen_lines[r][0] = '\0';
         editor.screen_lens[r]     = 0;
     }
     editor.screen_rows = rows_needed;
     editor.screen_cols = editor.cols;
-    if (rowbuf_cap < (editor.cols * MAXCHARLEN) + 1) {
-        rowbuf_cap = (editor.cols * MAXCHARLEN) + 1;
+    if (rowbuf_cap < line_cap) {
+        rowbuf_cap = line_cap;
         rowbuf     = (char *)xrealloc(rowbuf, rowbuf_cap);
     }
     if (spaces_cap < editor.cols + 1) {
