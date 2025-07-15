@@ -1,6 +1,7 @@
 #include "yoc.h"
 #include <string.h>
 #include <stdint.h>
+#include <limits.h>
 #define FNV_OFFSET_BASIS (((uint64_t)0xCBF29CE4u << 32) | 0x84222325u)
 #define FNV_PRIME        (((uint64_t)0x00000100u << 32) | 0x000001B3u)
 uint64_t fnv1a_hash(const unsigned char *s, size_t len) {
@@ -14,8 +15,14 @@ uint64_t fnv1a_hash(const unsigned char *s, size_t len) {
 static size_t calc_capacity(size_t current, size_t required) {
     size_t cap = (current < LINE_INLINE_CAP) ? LINE_INLINE_CAP : current;
     while (cap < required) {
+        if (cap > SIZE_MAX / 2) {
+            cap = required;
+            break;
+        }
         cap *= 2;
-        if (cap == 0) cap = LINE_INLINE_CAP;
+        if (cap == 0) {
+            cap = LINE_INLINE_CAP;
+        }
     }
     return cap > required ? cap : required;
 }
