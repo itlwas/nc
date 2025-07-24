@@ -50,7 +50,7 @@ void file_load(File *file) {
             buf->digest += newline->hash;
         }
     }
-    if (had_trailing_newline && buf->curr->len > 0) {
+    if (had_trailing_newline) {
         Line *newline = line_new(buf->curr, NULL);
         buf->curr = newline;
         buf->num_lines++;
@@ -72,9 +72,14 @@ void file_save(File *file) {
     }
     for (Line *line = file->buffer.begin; line; line = line->next) {
         fwrite(line->s, 1, line->len, f);
-        if (line->next) {
+        if (line->next || line->len > 0) {
             fputc('\n', f);
         }
+    }
+    if (file->buffer.curr->len > 0) {
+        Line *newline = line_new(file->buffer.curr, NULL);
+        file->buffer.num_lines++;
+        file->buffer.digest += newline->hash;
     }
     fclose(f);
     file->saved_digest = file->buffer.digest;
