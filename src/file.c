@@ -76,12 +76,14 @@ void file_save(File *file) {
             fputc('\n', f);
         }
     }
-    if (file->buffer.curr->len > 0) {
-        Line *newline = line_new(file->buffer.curr, NULL);
+    fclose(f);
+    Line *last = file->buffer.begin;
+    while (last->next) last = last->next; 
+    if (last->len > 0 && !last->next) { 
+        Line *newline = line_new(last, NULL);
         file->buffer.num_lines++;
         file->buffer.digest += newline->hash;
     }
-    fclose(f);
     file->saved_digest = file->buffer.digest;
     file->is_modified = FALSE;
 }
