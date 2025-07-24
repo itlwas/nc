@@ -219,11 +219,18 @@ static wchar_t get_wch(int *special_key) {
     DWORD nread;
     wchar_t retval = L'\0';
     *special_key = 0;
-    do {
+    for (;;) {
         if (!ReadConsoleInputW(hIn, &input, 1, &nread)) {
             die("ReadConsoleInputW");
         }
-    } while (!(input.EventType == KEY_EVENT && input.Event.KeyEvent.bKeyDown));
+        if (input.EventType == WINDOW_BUFFER_SIZE_EVENT) {
+            render_refresh();
+            continue;
+        }
+        if (input.EventType == KEY_EVENT && input.Event.KeyEvent.bKeyDown) {
+            break;
+        }
+    }
     WORD keycode = input.Event.KeyEvent.wVirtualKeyCode;
     WORD unicode = input.Event.KeyEvent.uChar.UnicodeChar;
     if (is_ctrl_pressed(&input)) {
