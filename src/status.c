@@ -25,6 +25,7 @@ static void   status_do_home(StatusInput *statin);
 static void   status_do_end(StatusInput *statin);
 static void   status_do_arrow_left(StatusInput *statin);
 static void   status_do_arrow_right(StatusInput *statin);
+static void   status_do_delete_forward(StatusInput *statin);
 S_Mode status_mode;
 void status_init(void) {
     editor.file.status.msg = (char *)xmalloc(BUFF_SIZE);
@@ -99,6 +100,7 @@ static bool_t status_process_input(StatusInput *statin) {
                 case ARROW_LEFT:  status_do_arrow_left(statin);  break;
                 case ARROW_RIGHT: status_do_arrow_right(statin); break;
                 case BACKSPACE:   status_do_backspace(statin);   break;
+                case DEL:         status_do_delete_forward(statin); break;
             }
         }
     }
@@ -215,4 +217,13 @@ static void status_do_backspace(StatusInput *statin) {
     if (statin->cx < statin->charsoff) {
         statin->charsoff = statin->cx;
     }
+}
+static void status_do_delete_forward(StatusInput *statin) {
+    if (statin->input->len == 0 || statin->cx >= line_get_mblen(statin->input)) return;
+    size_t start = mbnum_to_index(statin->input->s, statin->cx);
+    size_t char_len = utf8_len(statin->input->s[start]);
+    if (char_len == 0 || start + char_len > statin->input->len) {
+        char_len = 1;
+    }
+    line_del_str(statin->input, start, char_len);
 }
