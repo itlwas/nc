@@ -64,6 +64,18 @@ void status_print(void) {
         mlen = editor.cols;
     }
     term_write((unsigned char *)editor.file.status.msg, mlen);
+    if (status_mode == NORMAL) {
+        char right_str[32];
+        size_t right_len = (size_t)snprintf(
+            right_str, sizeof(right_str), "%lu:%lu",
+            (unsigned long)(editor.file.cursor.y + 1),
+            (unsigned long)(editor.file.cursor.rx + 1)
+        );
+        if (right_len < editor.cols) {
+            term_set_cursor(editor.cols - right_len, editor.rows);
+            term_write((unsigned char *)right_str, right_len);
+        }
+    }
     term_write((const unsigned char *)rev_off, sizeof(rev_off) - 1);
     status_mode = NORMAL;
 }
@@ -151,8 +163,6 @@ static void status_realloc(size_t len) {
 static void status_set_default(void) {
     const char *path;
     size_t      left_len;
-    char        right_str[32];
-    size_t      right_len, fill_len;
     status_realloc(editor.cols + 1);
     path = editor.file.path[0] ? extract_filename(editor.file.path) : "[No Name]";
     if (editor.file.is_modified && editor.file.path[0] != '\0') {
@@ -160,23 +170,12 @@ static void status_set_default(void) {
     } else {
         left_len = (size_t)snprintf(editor.file.status.msg, editor.file.status.cap, "%s", path);
     }
-    right_len = (size_t)snprintf(
-        right_str, sizeof(right_str), "%lu:%lu",
-        (unsigned long)(editor.file.cursor.y + 1),
-        (unsigned long)(editor.file.cursor.rx + 1)
-    );
-    if (left_len + right_len + 1 > editor.cols) {
-        if (editor.cols > right_len + 1) {
-            left_len = editor.cols - right_len - 1;
-        } else {
-            left_len = 0;
-        }
+    if (left_len > editor.cols - 1) {
+        size_t allowed_width = editor.cols - 1;
+        left_len = width_to_length((unsigned char *)editor.file.status.msg, allowed_width);
+        editor.file.status.msg[left_len] = '\0';
     }
-    editor.file.status.msg[left_len] = '\0';
-    fill_len = editor.cols - left_len - right_len;
-    memset(editor.file.status.msg + left_len, ' ', fill_len);
-    memcpy(editor.file.status.msg + left_len + fill_len, right_str, right_len + 1);
-    editor.file.status.len = left_len + fill_len + right_len;
+    editor.file.status.len = left_len;
 }
 static void status_do_insert(StatusInput *statin, unsigned char *s) {
     size_t str_len = strlen((const char *)s);
