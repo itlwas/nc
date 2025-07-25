@@ -173,6 +173,9 @@ static void status_set_default(void) {
     if (left_len > editor.cols - 1) {
         size_t allowed_width = editor.cols - 1;
         left_len = width_to_length((unsigned char *)editor.file.status.msg, allowed_width);
+        while (left_len > 0 && is_continuation_byte((unsigned char)editor.file.status.msg[left_len])) {
+            --left_len;
+        }
         editor.file.status.msg[left_len] = '\0';
     }
     editor.file.status.len = left_len;
