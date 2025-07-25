@@ -69,7 +69,18 @@ size_t term_read(unsigned char **s, int *special_key) {
         *s = buf;
         return 0;
     }
-    int size = WideCharToMultiByte(CP_UTF8, 0, &c, 1, (LPSTR)buf, MAXCHARLEN, NULL, NULL);
+    wchar_t wcs[2];
+    int wlen = 1;
+    wcs[0] = c;
+    if (c >= 0xD800 && c <= 0xDBFF) {
+        int dummy_key;
+        wchar_t c2 = get_wch(&dummy_key);
+        if (c2 >= 0xDC00 && c2 <= 0xDFFF) {
+            wcs[1] = c2;
+            wlen = 2;
+        }
+    }
+    int size = WideCharToMultiByte(CP_UTF8, 0, wcs, wlen, (LPSTR)buf, MAXCHARLEN, NULL, NULL);
     if (size <= 0) die("WideCharToMultiByte");
     buf[size] = '\0';
     *s = buf;
