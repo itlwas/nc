@@ -300,8 +300,26 @@ void edit_move_next_para(void) {
 }
 static void edit_insert_n(const unsigned char *s, size_t s_len) {
     if (s_len == 0) return;
+    for (size_t i = 0; i < s_len; ++i) {
+        if (s[i] == '\n' || s[i] == '\r') {
+            size_t nl_len = 1;
+            if (s[i] == '\r' && i + 1 < s_len && s[i + 1] == '\n') {
+                nl_len = 2;
+            }
+            edit_insert_n(s, i);
+            edit_enter();
+            if (i + nl_len < s_len) {
+                edit_insert_n(s + i + nl_len, s_len - i - nl_len);
+            }
+            return;
+        }
+    }
     pre_line_change(editor.file.buffer.curr);
-    line_insert_strn(editor.file.buffer.curr, mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x), s, s_len);
+    line_insert_strn(
+        editor.file.buffer.curr,
+        mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x),
+        s, s_len
+    );
     post_line_change(editor.file.buffer.curr);
     editor.file.cursor.x += index_to_mbnum(s, s_len);
     editor.file.cursor.rx = x_to_rx(editor.file.buffer.curr, editor.file.cursor.x);
