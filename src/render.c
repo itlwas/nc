@@ -130,6 +130,17 @@ static void render_rows(void) {
             row_len = (size_t)snprintf(
                 rowbuf, rowbuf_cap, " %*lu ", (int)digits, (unsigned long)lnum
             );
+            /*
+             * snprintf возвращает длину, которую *нужно* было бы записать.
+             * Если буфер оказался короче, реальная строка уже обрезана по
+             * rowbuf_cap – 1 символ. Однако возвращаемое значение остаётся
+             * больше размера буфера. Мы сбрасываем row_len до предельного
+             * значения, чтобы последующие операции (rowbuf[row_len] = '\0',
+             * memcpy/memcmp и т. д.) не выходили за границы памяти.
+             */
+            if (row_len >= rowbuf_cap) {
+                row_len = rowbuf_cap - 1;  /* последний байт — под NUL */
+            }
         }
         if (!line) {
             if (
