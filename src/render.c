@@ -130,6 +130,9 @@ static void render_rows(void) {
             row_len = (size_t)snprintf(
                 rowbuf, rowbuf_cap, " %*lu ", (int)digits, (unsigned long)lnum
             );
+            if (row_len >= rowbuf_cap) {
+                row_len = rowbuf_cap - 1;
+            }
         }
         if (!line) {
             if (
