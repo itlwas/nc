@@ -3,8 +3,9 @@
 > **Yocto** - the smallest SI prefix (10⁻²⁴). **Yoc** - the smallest, fastest terminal text editor.
 
 [![Build Status](https://github.com/itlwas/yoc-editor/workflows/nightly/badge.svg)](https://github.com/itlwas/yoc-editor/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/itlwas/yoc-editor/releases)
+[![AUR](https://img.shields.io/aur/version/yoc)](https://aur.archlinux.org/packages/yoc)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A lightning-fast, ultra-minimal terminal text editor written in pure C. Born from the philosophy that less is more, Yoc delivers maximum performance with minimal resource consumption.
 
@@ -27,11 +28,28 @@ Yoc embodies the principle of **maximum efficiency through minimalism**. Every l
 > *"The best code is no code at all"* - but when you need a text editor, Yoc is there.
 
 ## 📦 Installation
+
+### Arch Linux (AUR)
+```bash
+# Using yay
+yay -S yoc
+
+# Using paru
+paru -S yoc
+
+# Manual installation from AUR
+git clone https://aur.archlinux.org/yoc.git
+cd yoc
+makepkg -si
+```
+
+### From Source
 ```bash
 # Clone and build
 git clone https://github.com/itlwas/yoc-editor.git
 cd yoc-editor
 make release
+sudo cp yoc /usr/bin/
 ```
 
 **Requirements**: C compiler (GCC, Clang, or MSVC) and Make.
@@ -39,8 +57,8 @@ make release
 ## 🎮 Usage
 
 ```bash
-./yoc              # Start with empty buffer
-./yoc filename.txt # Open existing file
+yoc              # Start with empty buffer
+yoc filename.txt # Open existing file
 ```
 
 ## 🔧 Technical Details
