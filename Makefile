@@ -20,7 +20,13 @@ LTOFLAGS ?= -flto
 CSTD := -std=c17
 CPPFLAGS := -Iinclude -D_FILE_OFFSET_BITS=64
 CFLAGS += $(CSTD) $(CPPFLAGS) $(WARNFLAGS) $(OPTFLAGS) -pipe -ffunction-sections -fdata-sections
-LDFLAGS += $(if $(filter Darwin,$(shell uname)),-Wl,-dead_strip,-Wl,--gc-sections -s)
+ifeq ($(filter Windows_NT,$(OS)),Windows_NT)
+LDFLAGS += -Wl,--gc-sections -s
+else ifeq ($(shell uname),Darwin)
+LDFLAGS += -Wl,-dead_strip
+else
+LDFLAGS += -Wl,--gc-sections -s
+endif
 DEBUG_FLAGS := -O0 -g -DDEBUG
 RELEASE_FLAGS := -DNDEBUG
 all: release
