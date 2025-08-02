@@ -1,0 +1,84 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to attach binaries to (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            bin: yoc-linux-amd64
+          - os: macos-13
+            bin: yoc-macos-amd64
+          - os: macos-14
+            bin: yoc-macos-arm64
+          - os: windows-latest
+            bin: yoc-win64.exe
+    steps:
+      - uses: actions/checkout@v4
+
+      - if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          install: |
+            mingw-w64-x86_64-gcc
+            make
+
+      - name: build
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: make release
+
+      - name: build
+        if: runner.os != 'Windows'
+        run: make release
+
+      - name: package
+        shell: bash
+        run: |
+          name="${{ matrix.bin }}"
+          if [[ "${{ runner.os }}" == 'Windows' ]]; then
+            mv yoc.exe "$name"
+          else
+            mv yoc "$name"
+          fi
+
+      - name: verify binary
+        shell: bash
+        run: |
+          echo "Binary: ${{ matrix.bin }}"
+          ls -lh ${{ matrix.bin }}
+          if [[ "${{ runner.os }}" != 'Windows' ]]; then
+            file ${{ matrix.bin }}
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.bin }}
+          path: ${{ matrix.bin }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: binaries
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          files: binaries/**/*
