@@ -75,7 +75,9 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🤝 About
 
-Yoc is a personal project by [@itlwas](https://github.com/itlwas). The name comes from "Yocto" - the smallest SI prefix, representing the minimal approach to text editing.
+Yoc is a personal project by [@itlwas](https://github.com/itlwas), built on a focused, minimalist philosophy. The name itself comes from "Yocto" — the smallest SI prefix — representing this core principle.
+
+To preserve the project's singular vision, external contributions are not currently accepted. You are, however, strongly encouraged to fork the repository and make it your own.
 
 ### Inspiration
 Originally based on [femto](https://github.com/wadiim/femto), Yoc has grown into its own unique editor with significant improvements and optimizations.
