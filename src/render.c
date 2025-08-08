@@ -176,7 +176,7 @@ static void render_rows(void) {
                 width = 0;
             }
             while (i < line->len && width < editor.window.x + text_cols) {
-                unsigned char c      = s[i];
+                unsigned char c        = s[i];
                 size_t        char_len = 1;
                 if (c == '\t') {
                     size_t spaces_to_add = editor.tabsize - (width % editor.tabsize);
@@ -189,16 +189,22 @@ static void render_rows(void) {
                     i += 1;
                     continue;
                 }
+                if (LIKELY(c < 0x80u)) {
+                    if (c >= 0x20u && c != 0x7Fu) {
+                        if (width + 1 > editor.window.x + text_cols) break;
+                        if (width >= editor.window.x && pos < rowbuf_cap - 1) {
+                            rowbuf[pos++] = (char)c;
+                        }
+                        ++width;
+                    }
+                    i += 1;
+                    continue;
+                }
                 if (!is_continuation_byte(c)) {
                     size_t char_width;
-                    if (c < 0x80u) {
-                        char_len   = 1;
-                        char_width = char_display_width(s + i);
-                    } else {
-                        char_len = utf8_len(c);
-                        if (char_len == 0 || i + char_len > line->len) char_len = 1;
-                        char_width = char_display_width(s + i);
-                    }
+                    char_len = utf8_len(c);
+                    if (char_len == 0 || i + char_len > line->len) char_len = 1;
+                    char_width = char_display_width(s + i);
                     if (char_width == 0) {
                         i += char_len;
                         continue;
