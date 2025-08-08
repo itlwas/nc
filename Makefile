@@ -5,7 +5,9 @@ CC ?= gcc
 PLAT := $(if $(filter Windows_NT,$(OS)),win,unix)
 SRC := $(filter-out src/win.c src/unix.c,$(wildcard src/*.c)) \
        src/$(PLAT).c
+SYNTAX_SRC := $(wildcard syntax/*.c)
 OBJ := $(SRC:src/%.c=obj/%.o)
+SYNTAX_OBJ := $(SYNTAX_SRC:syntax/%.c=obj/syntax/%.o)
 OUT := yoc$(if $(filter Windows_NT,$(OS)),.exe,)
 
 CFLAGS += -std=c17 -Iinclude -D_FILE_OFFSET_BITS=64 \
@@ -19,6 +21,7 @@ LDFLAGS += -Wl,--gc-sections -s
 endif
 
 -include $(OBJ:.o=.d)
+-include $(SYNTAX_OBJ:.o=.d)
 
 all: release
 
@@ -32,13 +35,18 @@ debug: build
 
 build: $(OUT)
 
-$(OUT): $(OBJ)
+$(OUT): $(OBJ) $(SYNTAX_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 obj/%.o: src/%.c | obj
 	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
 
+obj/syntax/%.o: syntax/%.c | obj/syntax
+	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
+
 obj:
+	mkdir -p $@
+obj/syntax:
 	mkdir -p $@
 
 clean:
