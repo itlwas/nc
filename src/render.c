@@ -25,7 +25,18 @@ void render_refresh(void) {
     lineno_pad = show_line_numbers ? digits + 2 : 0;
     ensure_screen_buffer();
     render_scroll();
-    render_main();
+    static uint64_t last_state = 0;
+    uint64_t state = editor.file.buffer.digest
+                   ^ (uint64_t)(uintptr_t)editor.top_line
+                   ^ ((uint64_t)editor.window.x << 1)
+                   ^ ((uint64_t)editor.window.y << 17)
+                   ^ ((uint64_t)editor.cols << 33)
+                   ^ ((uint64_t)editor.rows << 49)
+                   ^ ((uint64_t)lineno_pad << 57);
+    if (state != last_state) {
+        render_main();
+        last_state = state;
+    }
     render_status_bar();
     term_set_cursor(
         (show_line_numbers ? lineno_pad : 0) + editor.file.cursor.rx - editor.window.x,
