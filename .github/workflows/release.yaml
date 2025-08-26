@@ -25,6 +25,8 @@ jobs:
             bin: yoc-win64.exe
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
@@ -32,6 +34,7 @@ jobs:
           install: |
             mingw-w64-x86_64-gcc
             make
+            git
 
       - name: build
         if: runner.os == 'Windows'
