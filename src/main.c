@@ -4,12 +4,23 @@
 Editor editor;
 int main(int argc, char **argv) {
     char *file_path = NULL;
-    if (argc > 1) {
-        if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0) {
-            printf("[v%s] :: [%s] :: [%s]\n", YOC_VERSION, YOC_HASH, YOC_DATE);
-            return 0;
+    int options_ended = 0;
+    for (int i = 1; i < argc; i++) {
+        const char *arg = argv[i];
+        int is_filepath = 1;
+        if (!options_ended && arg[0] == '-') {
+            if (strcmp(arg, "--") == 0) {
+                options_ended = 1;
+                is_filepath = 0;
+            } else if (strcmp(arg, "-v") == 0 || strcmp(arg, "--version") == 0) {
+                printf("[v%s] :: [%s] :: [%s]\n", YOC_VERSION, YOC_HASH, YOC_DATE);
+                return 0;
+            }
         }
-        file_path = argv[1];
+        if (is_filepath) {
+            file_path = argv[i];
+            break;
+        }
     }
     editor.tabsize = 4;
     editor.window.x = 0;
