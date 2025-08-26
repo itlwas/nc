@@ -1,8 +1,16 @@
 #include "yoc.h"
 #include <string.h>
+#include <stdio.h>
 Editor editor;
 int main(int argc, char **argv) {
-    char *file_path = argc > 1 ? argv[1] : NULL;
+    char *file_path = NULL;
+    if (argc > 1) {
+        if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0) {
+            printf("[v%s] :: [%s] :: [%s]\n", YOC_VERSION, YOC_HASH, YOC_DATE);
+            return 0;
+        }
+        file_path = argv[1];
+    }
     editor.tabsize = 4;
     editor.window.x = 0;
     editor.window.y = 0;
