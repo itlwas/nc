@@ -264,6 +264,13 @@ bool_t find_start(void) {
         int special_key = 0;
         unsigned char *typed = NULL;
         size_t len = term_read(&typed, &special_key);
+        if (len == 0 && special_key == 0) {
+            show_status_match(cur, list.count);
+            render_refresh();
+            draw_highlights(&list, cur);
+            restore_cursor();
+            continue;
+        }
         if (len != 0) {
             clear_visible_highlights(&list);
             render_refresh();

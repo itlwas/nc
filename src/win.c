@@ -236,7 +236,8 @@ static wchar_t get_wch(int *special_key) {
         }
         if (input.EventType == WINDOW_BUFFER_SIZE_EVENT) {
             render_refresh();
-            continue;
+            *special_key = 0;
+            return L'\0';
         }
         if (input.EventType == KEY_EVENT && input.Event.KeyEvent.bKeyDown) {
             break;
