@@ -235,27 +235,28 @@ void edit_process_key(void) {
             case BACKSPACE: edit_backspace(); break;
             case TAB: edit_insert_n((unsigned char*)"\t", 1); break;
             case ENTER: edit_enter(); break;
+            case DEL: edit_delete_forward(); break;
             case HOME: edit_move_home(); break;
             case END: edit_move_end(); break;
             case PAGE_UP: edit_move_pgup(); break;
             case PAGE_DOWN: edit_move_pgdown(); break;
-            case DEL: edit_delete_forward(); break;
-            case ARROW_LEFT: edit_move_left(); break;
             case ARROW_UP: edit_move_up(); break;
-            case ARROW_RIGHT: edit_move_right(); break;
             case ARROW_DOWN: edit_move_down(); break;
+            case ARROW_LEFT: edit_move_left(); break;
+            case ARROW_RIGHT: edit_move_right(); break;
             case CTRL_HOME: edit_move_top(); break;
             case CTRL_END: edit_move_bottom(); break;
-            case CTRL_ARROW_LEFT: edit_move_prev_word(); break;
-            case CTRL_ARROW_RIGHT: edit_move_next_word(); break;
             case CTRL_ARROW_UP: edit_move_prev_para(); break;
             case CTRL_ARROW_DOWN: edit_move_next_para(); break;
-            case CTRL_KEY('s'): file_save_prompt(); break;
+            case CTRL_ARROW_LEFT: edit_move_prev_word(); break;
+            case CTRL_ARROW_RIGHT: edit_move_next_word(); break;
+            case CTRL_KEY('d'): edit_duplicate_line(); break;
+            case CTRL_KEY('f'): find_start(); break;
+            case CTRL_KEY('g'): edit_goto_line(); break;
+            case CTRL_KEY('o'): file_open_prompt(); break;
             case CTRL_KEY('q'): file_quit_prompt(); break;
             case CTRL_KEY('r'): show_line_numbers = !show_line_numbers; break;
-            case CTRL_KEY('o'): file_open_prompt(); break;
-            case CTRL_KEY('g'): edit_goto_line(); break;
-            case CTRL_KEY('d'): edit_duplicate_line(); break;
+            case CTRL_KEY('s'): file_save_prompt(); break;
         }
     }
     render_scroll();
