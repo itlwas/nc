@@ -181,17 +181,19 @@ static void clear_visible_highlights(const FindMatchList *list) {
     }
 }
 static void draw_highlights(const FindMatchList *list, size_t current_idx) {
-    for (size_t idx = 0; idx < list->count; ++idx) {
+    size_t y0 = editor.window.y;
+    size_t y1 = editor.window.y + (editor.rows ? editor.rows - 1 : 0);
+    size_t lo = 0, hi = list->count;
+    while (lo < hi) { size_t mid = lo + ((hi - lo) >> 1); if (list->items[mid].y < y0) lo = mid + 1; else hi = mid; }
+    size_t start = lo;
+    lo = start; hi = list->count;
+    while (lo < hi) { size_t mid = lo + ((hi - lo) >> 1); if (list->items[mid].y <= y1) lo = mid + 1; else hi = mid; }
+    size_t end = lo;
+    for (size_t idx = start; idx < end; ++idx) {
         const FindMatch *m = &list->items[idx];
-        if (m->y < editor.window.y || m->y >= editor.window.y + editor.rows) continue;
         size_t screen_y = m->y - editor.window.y;
-        if (idx == current_idx) {
-            size_t width_cols = (m->end_rx > m->start_rx) ? (m->end_rx - m->start_rx) : 0;
-            draw_segment(m->line, screen_y, m->start_rx, width_cols, 1);
-        } else {
-            size_t width_cols = (m->end_rx > m->start_rx) ? (m->end_rx - m->start_rx) : 0;
-            draw_segment(m->line, screen_y, m->start_rx, width_cols, 2);
-        }
+        size_t width_cols = (m->end_rx > m->start_rx) ? (m->end_rx - m->start_rx) : 0;
+        draw_segment(m->line, screen_y, m->start_rx, width_cols, (idx == current_idx) ? 1 : 2);
     }
 }
 static void move_cursor_to(size_t target_y, size_t target_rx) {
@@ -250,7 +252,6 @@ bool_t find_start(void) {
     collect_matches(input->s, input->len, &list);
     if (list.count == 0) {
         status_msg("No matches found");
-        render_refresh();
         line_free(input);
         return FALSE;
     }
@@ -284,19 +285,15 @@ bool_t find_start(void) {
             restore_cursor();
             break;
         }
-        if (special_key == ARROW_UP) {
-            cur = (cur == 0) ? (list.count - 1) : (cur - 1);
+        if (special_key == ARROW_UP || special_key == ARROW_DOWN) {
+            if (special_key == ARROW_UP) {
+                cur = (cur == 0) ? (list.count - 1) : (cur - 1);
+            } else {
+                cur = (cur + 1) % list.count;
+            }
             move_cursor_to(list.items[cur].y, list.items[cur].start_rx);
             show_status_match(cur, list.count);
-            render_refresh();
-            draw_highlights(&list, cur);
-            restore_cursor();
-            continue;
-        }
-        if (special_key == ARROW_DOWN) {
-            cur = (cur + 1) % list.count;
-            move_cursor_to(list.items[cur].y, list.items[cur].start_rx);
-            show_status_match(cur, list.count);
+            render_scroll();
             render_refresh();
             draw_highlights(&list, cur);
             restore_cursor();
