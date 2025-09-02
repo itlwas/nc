@@ -159,14 +159,17 @@ void term_enable_raw(void) {
     }
 }
 void term_switch_to_norm(void) {
-    if (vt_alternate) {
-        static const char seq[] = "\x1b[?1049l";
-        term_write((const unsigned char *)seq, sizeof(seq) - 1);
-    } else {
-        if (!SetConsoleActiveScreenBuffer(old_hOut)) {
-            die("SetConsoleActiveScreenBuffer");
-        }
-    }
+	if (vt_alternate) {
+		static const char seq[] = "\x1b[?1049l";
+		term_write((const unsigned char *)seq, sizeof(seq) - 1);
+	} else {
+		if (old_hOut == NULL || old_hOut == INVALID_HANDLE_VALUE) {
+			return;
+		}
+		if (!SetConsoleActiveScreenBuffer(old_hOut)) {
+			die("SetConsoleActiveScreenBuffer");
+		}
+	}
 }
 void term_switch_to_alt(void) {
     if (vt_alternate) {
