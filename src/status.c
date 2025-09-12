@@ -6,7 +6,14 @@
 const char *extract_filename(const char *path) {
     const char *slash = strrchr(path, '/');
     const char *backslash = strrchr(path, '\\');
-    const char *sep = (slash > backslash) ? slash : backslash;
+    const char *sep;
+    if (!slash) {
+        sep = backslash;
+    } else if (!backslash) {
+        sep = slash;
+    } else {
+        sep = (slash > backslash) ? slash : backslash;
+    }
     return sep ? sep + 1 : path;
 }
 typedef struct {
