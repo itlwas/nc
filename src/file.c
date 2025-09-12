@@ -64,7 +64,10 @@ void file_load(File *file) {
 }
 void file_save(File *file) {
     FILE *f = fopen(file->path, "wb");
-    if (!f) die("fopen");
+    if (!f) {
+        status_msg("Save failed");
+        return;
+    }
     setvbuf(f, NULL, _IOFBF, 65536);
     if (file->buffer.num_lines == 1 && file->buffer.begin->len == 0) {
         fclose(f);
@@ -78,8 +81,8 @@ void file_save(File *file) {
     }
     fclose(f);
     Line *last = file->buffer.begin;
-    while (last->next) last = last->next; 
-    if (last->len > 0 && !last->next) { 
+    while (last->next) last = last->next;
+    if (last->len > 0 && !last->next) {
         Line *newline = line_new(last, NULL);
         file->buffer.num_lines++;
         file->buffer.digest += newline->hash;
@@ -90,8 +93,9 @@ void file_save(File *file) {
 bool_t file_save_prompt(void) {
     if (editor.file.path[0] != '\0') {
         file_save(&editor.file);
-        editor.file.is_modified = FALSE;
-        return TRUE;
+        bool_t ok = (editor.file.buffer.digest == editor.file.saved_digest);
+        editor.file.is_modified = !ok;
+        return ok;
     }
     Line *input = line_new(NULL, NULL);
     if (status_input(input, "Save as: ", NULL)) {
@@ -102,9 +106,10 @@ bool_t file_save_prompt(void) {
             }
             memcpy(editor.file.path, input->s, input->len + 1);
             file_save(&editor.file);
-            editor.file.is_modified = FALSE;
+            bool_t ok = (editor.file.buffer.digest == editor.file.saved_digest);
+            editor.file.is_modified = !ok;
             line_free(input);
-            return TRUE;
+            return ok;
         }
     }
     line_free(input);
