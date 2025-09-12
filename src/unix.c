@@ -187,8 +187,11 @@ void term_set_cursor(size_t x, size_t y) {
     term_write((unsigned char *)buf, (size_t)len);
 }
 bool_t fs_exists(const char *path) {
-    struct stat buffer;
-    return (stat(path, &buffer) == 0);
+    struct stat st;
+    if (stat(path, &st) != 0) {
+        return FALSE;
+    }
+    return S_ISREG(st.st_mode);
 }
 void fs_canonicalize(const char *path, char *out, size_t size) {
     if (realpath(path, out) == NULL) {
@@ -199,4 +202,4 @@ void fs_canonicalize(const char *path, char *out, size_t size) {
 static void handle_winch(int sig) {
     (void)sig;
     winch_flag = 1;
-} 
+}
