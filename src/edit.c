@@ -396,6 +396,9 @@ static void edit_duplicate_line(void) {
     Line *orig = editor.file.buffer.curr;
     Line *dup = line_new(orig, orig->next);
     if (orig->len > 0) {
+        if (UNLIKELY(orig->len == SIZE_MAX)) {
+            die("size overflow");
+        }
         size_t required = orig->len + 1;
         if (required > dup->cap) {
             if (dup->s == dup->inline_space) {
