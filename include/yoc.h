@@ -9,6 +9,10 @@
 #include <stdint.h>
 #ifdef _WIN32
 #include <windows.h>
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
 #else
 #include <sys/types.h>
 #include <termios.h>
