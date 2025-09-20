@@ -228,11 +228,51 @@ void term_set_cursor(size_t x, size_t y) {
     }
 }
 bool_t fs_exists(const char *path) {
-    DWORD dwAttrib = GetFileAttributesA(path);
+    int wlen = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0);
+    if (wlen <= 0) {
+        return FALSE;
+    }
+    wchar_t *wpath = (wchar_t *)xmalloc((size_t)wlen * sizeof(wchar_t));
+    if (MultiByteToWideChar(CP_UTF8, 0, path, -1, wpath, wlen) != wlen) {
+        free(wpath);
+        return FALSE;
+    }
+    DWORD dwAttrib = GetFileAttributesW(wpath);
+    free(wpath);
     return (dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 }
 void fs_canonicalize(const char *path, char *out, size_t size) {
-    if (GetFullPathNameA(path, (DWORD)size, out, NULL) == 0) {
+    int wlen = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0);
+    if (wlen > 0) {
+        wchar_t *wpath = (wchar_t *)xmalloc((size_t)wlen * sizeof(wchar_t));
+        if (MultiByteToWideChar(CP_UTF8, 0, path, -1, wpath, wlen) == wlen) {
+            DWORD need = GetFullPathNameW(wpath, 0, NULL, NULL);
+            if (need > 0) {
+                wchar_t *wfull = (wchar_t *)xmalloc((size_t)need * sizeof(wchar_t));
+                DWORD written = GetFullPathNameW(wpath, need, wfull, NULL);
+                if (written > 0 && written < need) {
+                    int u8len = WideCharToMultiByte(CP_UTF8, 0, wfull, -1, NULL, 0, NULL, NULL);
+                    if (u8len > 0) {
+                        if ((size_t)u8len <= size) {
+                            (void)WideCharToMultiByte(CP_UTF8, 0, wfull, -1, out, u8len, NULL, NULL);
+                            free(wfull);
+                            free(wpath);
+                            return;
+                        } else if (size > 0) {
+                            (void)WideCharToMultiByte(CP_UTF8, 0, wfull, -1, out, (int)size - 1, NULL, NULL);
+                            out[size - 1] = '\0';
+                            free(wfull);
+                            free(wpath);
+                            return;
+                        }
+                    }
+                }
+                free(wfull);
+            }
+        }
+        free(wpath);
+    }
+    if (size > 0) {
         strncpy(out, path, size - 1);
         out[size - 1] = '\0';
     }
