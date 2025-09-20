@@ -97,6 +97,8 @@ void file_save(File *file) {
     setvbuf(f, NULL, _IOFBF, 65536);
     if (file->buffer.num_lines == 1 && file->buffer.begin->len == 0) {
         fclose(f);
+        file->saved_digest = file->buffer.digest;
+        file->is_modified = FALSE;
         return;
     }
     for (Line *line = file->buffer.begin; line; line = line->next) {

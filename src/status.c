@@ -151,7 +151,7 @@ static void status_input_print(StatusInput *statin) {
     term_write((unsigned char *)msg, msglen);
     term_write(statin->input->s + start, len);
     term_write((const unsigned char *)STATUS_BG_OFF, sizeof(STATUS_BG_OFF) - 1);
-    term_set_cursor(statin->cx + msglen - statin->charsoff, editor.rows);
+    term_set_cursor(statin->cx + length_to_width((unsigned char *)msg, msglen) - statin->charsoff, editor.rows);
 }
 static void status_realloc(size_t len) {
     if (len >= editor.file.status.cap) {
