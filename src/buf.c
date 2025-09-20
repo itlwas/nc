@@ -27,6 +27,9 @@ static size_t calc_capacity(size_t current, size_t required) {
     return cap > required ? cap : required;
 }
 static void line_reserve(Line *line, size_t additional) {
+    if (UNLIKELY(additional > SIZE_MAX - line->len - 1)) {
+        die("size overflow");
+    }
     size_t required = line->len + additional + 1;
     if (required <= line->cap) {
         return;
