@@ -49,15 +49,34 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 void term_write(const unsigned char *s, size_t len) {
     if (len == 0) return;
     int required = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s, (int)len, NULL, 0);
-    if (required <= 0) die("MultiByteToWideChar");
     static wchar_t *wbuf = NULL;
     static size_t wcap = 0;
+    if (required <= 0) {
+        if (len > wcap) {
+            wbuf = (wchar_t *)xrealloc(wbuf, len * sizeof(wchar_t));
+            wcap = len;
+        }
+        for (size_t i = 0; i < len; ++i) {
+            wbuf[i] = (s[i] < 0x80) ? (wchar_t)s[i] : L'?';
+        }
+        write_console_wide(wbuf, len);
+        return;
+    }
     if ((size_t)required > wcap) {
         wbuf = (wchar_t *)xrealloc(wbuf, (size_t)required * sizeof(wchar_t));
         wcap = (size_t)required;
     }
     if (MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s, (int)len, wbuf, required) != required) {
-        die("MultiByteToWideChar");
+        size_t n = len;
+        if (n > wcap) {
+            wbuf = (wchar_t *)xrealloc(wbuf, n * sizeof(wchar_t));
+            wcap = n;
+        }
+        for (size_t i = 0; i < n; ++i) {
+            wbuf[i] = (s[i] < 0x80) ? (wchar_t)s[i] : L'?';
+        }
+        write_console_wide(wbuf, n);
+        return;
     }
     write_console_wide(wbuf, (size_t)required);
 }
