@@ -199,6 +199,9 @@ void fs_canonicalize(const char *path, char *out, size_t size) {
         out[size - 1] = '\0';
     }
 }
+FILE *fs_fopen(const char *path, const char *mode) {
+    return fopen(path, mode);
+}
 static void handle_winch(int sig) {
     (void)sig;
     winch_flag = 1;

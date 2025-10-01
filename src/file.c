@@ -27,16 +27,7 @@ void file_load(File *file) {
     ssize_t line_len;
     bool_t first_line = TRUE;
     Buffer *buf = &file->buffer;
-#ifdef _WIN32
-    int wlen = MultiByteToWideChar(CP_UTF8, 0, file->path, -1, NULL, 0);
-    if (wlen <= 0) die("MultiByteToWideChar");
-    wchar_t *wpath = (wchar_t *)xmalloc((size_t)wlen * sizeof(wchar_t));
-    if (MultiByteToWideChar(CP_UTF8, 0, file->path, -1, wpath, wlen) != wlen) die("MultiByteToWideChar");
-    f = _wfopen(wpath, L"rb");
-    free(wpath);
-#else
-    f = fopen(file->path, "rb");
-#endif
+    f = fs_fopen(file->path, "rb");
     if (!f) die("fopen");
     setvbuf(f, NULL, _IOFBF, 65536);
     buf->digest = 0;
@@ -64,24 +55,7 @@ void file_load(File *file) {
     file->is_modified = FALSE;
 }
 void file_save(File *file) {
-    FILE *f;
-#ifdef _WIN32
-    int wlen = MultiByteToWideChar(CP_UTF8, 0, file->path, -1, NULL, 0);
-    if (wlen <= 0) {
-        status_msg("Save failed");
-        return;
-    }
-    wchar_t *wpath = (wchar_t *)xmalloc((size_t)wlen * sizeof(wchar_t));
-    if (MultiByteToWideChar(CP_UTF8, 0, file->path, -1, wpath, wlen) != wlen) {
-        free(wpath);
-        status_msg("Save failed");
-        return;
-    }
-    f = _wfopen(wpath, L"wb");
-    free(wpath);
-#else
-    f = fopen(file->path, "wb");
-#endif
+    FILE *f = fs_fopen(file->path, "wb");
     if (!f) {
         status_msg("Save failed");
         return;

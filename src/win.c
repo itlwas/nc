@@ -277,6 +277,25 @@ void fs_canonicalize(const char *path, char *out, size_t size) {
         out[size - 1] = '\0';
     }
 }
+FILE *fs_fopen(const char *path, const char *mode) {
+    int wpath_len = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0);
+    if (wpath_len <= 0) return NULL;
+    wchar_t *wpath = (wchar_t *)xmalloc((size_t)wpath_len * sizeof(wchar_t));
+    if (MultiByteToWideChar(CP_UTF8, 0, path, -1, wpath, wpath_len) != wpath_len) {
+        free(wpath);
+        return NULL;
+    }
+    wchar_t wmode[8];
+    size_t i = 0;
+    while (mode[i] && i < 7) {
+        wmode[i] = (wchar_t)mode[i];
+        ++i;
+    }
+    wmode[i] = L'\0';
+    FILE *f = _wfopen(wpath, wmode);
+    free(wpath);
+    return f;
+}
 static void write_console_wide(const wchar_t *ws, size_t wlen) {
     while (wlen > 0) {
         DWORD written;
