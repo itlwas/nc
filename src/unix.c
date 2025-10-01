@@ -202,6 +202,14 @@ void fs_canonicalize(const char *path, char *out, size_t size) {
 FILE *fs_fopen(const char *path, const char *mode) {
     return fopen(path, mode);
 }
+void cmdline_init(int *argc, char ***argv) {
+    (void)argc;
+    (void)argv;
+}
+void cmdline_free(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+}
 static void handle_winch(int sig) {
     (void)sig;
     winch_flag = 1;

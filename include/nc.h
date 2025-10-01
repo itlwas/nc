@@ -174,6 +174,8 @@ const char *extract_filename(const char *path);
 bool_t fs_exists(const char *path);
 void fs_canonicalize(const char *path, char *out, size_t size);
 FILE *fs_fopen(const char *path, const char *mode);
+void cmdline_init(int *argc, char ***argv);
+void cmdline_free(int argc, char **argv);
 bool_t find_start(void);
 void term_init(void);
 void term_get_win_size(size_t *x, size_t *y);

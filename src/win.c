@@ -9,7 +9,7 @@
 HANDLE hIn, hOut;
 static HANDLE old_hOut;
 static TCHAR old_title[PATH_MAX];
-static DWORD mode;
+static DWORD orig_console_mode;
 static bool_t vt_alternate = FALSE;
 static wchar_t get_wch(int *special_key);
 static bool_t is_ctrl_pressed(INPUT_RECORD *ir);
@@ -164,16 +164,16 @@ void term_set_title(const char *title) {
     atexit(restore_title);
 }
 void term_disable_raw(void) {
-    if (!SetConsoleMode(hIn, mode)) {
+    if (!SetConsoleMode(hIn, orig_console_mode)) {
         die("SetConsoleMode");
     }
 }
 void term_enable_raw(void) {
     atexit(term_disable_raw);
-    if (!GetConsoleMode(hIn, &mode)) {
+    if (!GetConsoleMode(hIn, &orig_console_mode)) {
         die("GetConsoleMode");
     }
-    if (!(SetConsoleMode(hIn, mode & (DWORD)~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT)))) {
+    if (!(SetConsoleMode(hIn, orig_console_mode & (DWORD)~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT)))) {
         die("SetConsoleMode");
     }
 }
@@ -295,6 +295,37 @@ FILE *fs_fopen(const char *path, const char *mode) {
     FILE *f = _wfopen(wpath, wmode);
     free(wpath);
     return f;
+}
+void cmdline_init(int *argc, char ***argv) {
+    int wargc = 0;
+    wchar_t **wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
+    if (!wargv) {
+        *argc = 0;
+        *argv = NULL;
+        return;
+    }
+    char **utf8_argv = (char **)xmalloc((size_t)(wargc + 1) * sizeof(char *));
+    for (int i = 0; i < wargc; i++) {
+        int u8len = WideCharToMultiByte(CP_UTF8, 0, wargv[i], -1, NULL, 0, NULL, NULL);
+        if (u8len > 0) {
+            utf8_argv[i] = (char *)xmalloc((size_t)u8len);
+            WideCharToMultiByte(CP_UTF8, 0, wargv[i], -1, utf8_argv[i], u8len, NULL, NULL);
+        } else {
+            utf8_argv[i] = (char *)xmalloc(1);
+            utf8_argv[i][0] = '\0';
+        }
+    }
+    utf8_argv[wargc] = NULL;
+    LocalFree(wargv);
+    *argc = wargc;
+    *argv = utf8_argv;
+}
+void cmdline_free(int argc, char **argv) {
+    if (!argv) return;
+    for (int i = 0; i < argc; i++) {
+        free(argv[i]);
+    }
+    free(argv);
 }
 static void write_console_wide(const wchar_t *ws, size_t wlen) {
     while (wlen > 0) {
