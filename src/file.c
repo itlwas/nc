@@ -21,19 +21,24 @@ void file_free(File *file) {
     status_free();
 }
 void file_load(File *file) {
-    FILE *f;
+    FILE *f = fs_fopen(file->path, "rb");
+    if (!f) {
+        die("fopen");
+    }
+    setvbuf(f, NULL, _IOFBF, 65536);
     char *line = NULL;
     size_t line_cap = 0;
     ssize_t line_len;
     bool_t first_line = TRUE;
     Buffer *buf = &file->buffer;
-    f = fs_fopen(file->path, "rb");
-    if (!f) die("fopen");
-    setvbuf(f, NULL, _IOFBF, 65536);
     buf->digest = 0;
     while ((line_len = getline(&line, &line_cap, f)) != -1) {
-        if (line_len > 0 && line[line_len - 1] == '\n') line_len--;
-        if (line_len > 0 && line[line_len - 1] == '\r') line_len--;
+        if (line_len > 0 && line[line_len - 1] == '\n') {
+            line_len--;
+        }
+        if (line_len > 0 && line[line_len - 1] == '\r') {
+            line_len--;
+        }
         if (first_line) {
             line_insert_strn(buf->curr, 0, (unsigned char *)line, (size_t)line_len);
             buf->curr->hash = fnv1a_hash(buf->curr->s, buf->curr->len);
@@ -149,16 +154,6 @@ bool_t file_prompt_save_if_modified(void) {
     line_free(input);
     return FALSE;
 }
-static void file_reset(File *file) {
-    buf_free(&file->buffer);
-    buf_init(&file->buffer);
-    file->cursor.x = 0;
-    file->cursor.y = 0;
-    file->cursor.rx = 0;
-    file->saved_digest = file->buffer.digest;
-    file->is_modified = FALSE;
-    editor.top_line = file->buffer.begin;
-}
 bool_t file_open_prompt(void) {
     Line *input = line_new(NULL, NULL);
     if (!status_input(input, "Open: ", NULL)) {
@@ -198,4 +193,14 @@ bool_t file_open_prompt(void) {
     editor.top_line = editor.file.buffer.begin;
     line_free(input);
     return TRUE;
+}
+static void file_reset(File *file) {
+    buf_free(&file->buffer);
+    buf_init(&file->buffer);
+    file->cursor.x = 0;
+    file->cursor.y = 0;
+    file->cursor.rx = 0;
+    file->saved_digest = file->buffer.digest;
+    file->is_modified = FALSE;
+    editor.top_line = file->buffer.begin;
 }

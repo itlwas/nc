@@ -15,12 +15,13 @@ typedef struct {
 static inline unsigned char to_lower_ascii_uc(unsigned char c) {
     return (c >= 'A' && c <= 'Z') ? (unsigned char)(c - 'A' + 'a') : c;
 }
-static void build_skip_table(const unsigned char *needle, size_t nlen, size_t skip[256]) {
-    for (size_t i = 0; i < 256; ++i) skip[i] = nlen;
-    if (nlen == 0) return;
-    for (size_t j = 0; j + 1 < nlen; ++j) {
-        skip[to_lower_ascii_uc(needle[j])] = nlen - 1 - j;
+static size_t compute_lineno_pad(void) {
+    if (!show_line_numbers) return 0;
+    size_t digits = 1;
+    for (size_t n = editor.file.buffer.num_lines; n >= 10; n /= 10) {
+        ++digits;
     }
+    return digits + 2;
 }
 static size_t rx_advance(Line *line, size_t from, size_t to, size_t rx_start) {
     const unsigned char *s = line->s;
@@ -28,8 +29,7 @@ static size_t rx_advance(Line *line, size_t from, size_t to, size_t rx_start) {
     while (from < to) {
         unsigned char c = s[from];
         if (c == '\t') {
-            size_t tab_w = editor.tabsize - (rx % editor.tabsize);
-            rx += tab_w;
+            rx += editor.tabsize - (rx % editor.tabsize);
             from += 1;
             continue;
         }
@@ -40,9 +40,19 @@ static size_t rx_advance(Line *line, size_t from, size_t to, size_t rx_start) {
     }
     return rx;
 }
+static void build_skip_table(const unsigned char *needle, size_t nlen, size_t skip[256]) {
+    for (size_t i = 0; i < 256; ++i) {
+        skip[i] = nlen;
+    }
+
+    if (nlen == 0) return;
+
+    for (size_t j = 0; j + 1 < nlen; ++j) {
+        skip[to_lower_ascii_uc(needle[j])] = nlen - 1 - j;
+    }
+}
 static void line_find_all_bmh(Line *line, const unsigned char *needle, size_t nlen,
-                              size_t needle_rx, size_t line_y,
-                              FindMatchList *out) {
+                               size_t needle_rx, size_t line_y, FindMatchList *out) {
     if (nlen == 0 || line->len == 0) return;
     size_t skip[256];
     build_skip_table(needle, nlen, skip);
@@ -98,14 +108,6 @@ static void collect_matches(const unsigned char *needle, size_t nlen, FindMatchL
         ++y;
     }
 }
-static size_t compute_lineno_pad(void) {
-    if (!show_line_numbers) return 0;
-    size_t digits = 1;
-    for (size_t n = editor.file.buffer.num_lines; n >= 10; n /= 10) {
-        ++digits;
-    }
-    return digits + 2;
-}
 static void draw_segment(Line *line, size_t screen_y, size_t rx_start, size_t rx_width, int style) {
     if (rx_width == 0 || screen_y >= editor.rows) return;
     size_t lineno_pad = compute_lineno_pad();
@@ -119,8 +121,8 @@ static void draw_segment(Line *line, size_t screen_y, size_t rx_start, size_t rx
     if (vis_end <= vis_start) return;
     size_t screen_x = (show_line_numbers ? lineno_pad : 0) + (vis_start - editor.window.x);
     if (screen_x >= avail_cols) return;
-    static const unsigned char sgr_reset[] = "\x1b[0m";
-    static const unsigned char sgr_invert[] = "\x1b[7m";
+    static const unsigned char sgr_reset[]     = "\x1b[0m";
+    static const unsigned char sgr_invert[]    = "\x1b[7m";
     static const unsigned char sgr_underline[] = "\x1b[4m";
     term_set_cursor(screen_x, screen_y);
     term_write(sgr_reset, sizeof(sgr_reset) - 1);
@@ -184,10 +186,19 @@ static void draw_highlights(const FindMatchList *list, size_t current_idx) {
     size_t y0 = editor.window.y;
     size_t y1 = editor.window.y + (editor.rows ? editor.rows - 1 : 0);
     size_t lo = 0, hi = list->count;
-    while (lo < hi) { size_t mid = lo + ((hi - lo) >> 1); if (list->items[mid].y < y0) lo = mid + 1; else hi = mid; }
+    while (lo < hi) {
+        size_t mid = lo + ((hi - lo) >> 1);
+        if (list->items[mid].y < y0) lo = mid + 1;
+        else hi = mid;
+    }
     size_t start = lo;
-    lo = start; hi = list->count;
-    while (lo < hi) { size_t mid = lo + ((hi - lo) >> 1); if (list->items[mid].y <= y1) lo = mid + 1; else hi = mid; }
+    lo = start;
+    hi = list->count;
+    while (lo < hi) {
+        size_t mid = lo + ((hi - lo) >> 1);
+        if (list->items[mid].y <= y1) lo = mid + 1;
+        else hi = mid;
+    }
     size_t end = lo;
     for (size_t idx = start; idx < end; ++idx) {
         const FindMatch *m = &list->items[idx];
@@ -216,17 +227,6 @@ static void restore_cursor(void) {
     term_set_cursor(cx, cy);
     term_show_cursor();
 }
-static void show_status_match(size_t idx, size_t total) {
-    if (total == 0) {
-        status_msg("No matches found");
-        return;
-    }
-    char buf[64];
-    size_t shown = idx + 1;
-    (void)snprintf(buf, sizeof(buf), "Match %lu of %lu",
-                   (unsigned long)shown, (unsigned long)total);
-    status_msg(buf);
-}
 static size_t nearest_match_index(const FindMatchList *list) {
     if (list->count == 0) return 0;
     size_t best = 0;
@@ -234,12 +234,26 @@ static size_t nearest_match_index(const FindMatchList *list) {
     for (size_t i = 0; i < list->count; ++i) {
         size_t y = list->items[i].y;
         size_t dist = (y > editor.window.y) ? (y - editor.window.y) : (editor.window.y - y);
-        if (dist < best_dist) { best = i; best_dist = dist; }
+        if (dist < best_dist) {
+            best = i;
+            best_dist = dist;
+        }
     }
     return best;
 }
+static void show_status_match(size_t idx, size_t total) {
+    if (total == 0) {
+        status_msg("No matches found");
+        return;
+    }
+    char buf[64];
+    (void)snprintf(buf, sizeof(buf), "Match %lu of %lu",
+                   (unsigned long)(idx + 1), (unsigned long)total);
+    status_msg(buf);
+}
 bool_t find_start(void) {
     Line *input = line_new(NULL, NULL);
+
     if (!status_input(input, "Find: ", NULL)) {
         line_free(input);
         return FALSE;

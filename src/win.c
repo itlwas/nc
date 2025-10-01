@@ -14,8 +14,8 @@ static bool_t vt_alternate = FALSE;
 static wchar_t get_wch(int *special_key);
 static bool_t is_ctrl_pressed(INPUT_RECORD *ir);
 static void write_console_wide(const wchar_t *ws, size_t wlen);
-static void restore_title(void);
 static void save_current_title(void);
+static void restore_title(void);
 static void string_to_tchar_array(const char *s, TCHAR t[]);
 ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
     if (lineptr == NULL || stream == NULL || n == NULL) {
@@ -23,31 +23,89 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
         return -1;
     }
     int c = fgetc(stream);
-    if (c == EOF) return -1;
+    if (c == EOF) {
+        return -1;
+    }
     if (*lineptr == NULL && *n == 0) {
         *n = 128;
         *lineptr = xmalloc(*n);
-        if (*lineptr == NULL) return -1;
+        if (*lineptr == NULL) {
+            return -1;
+        }
     }
     size_t pos = 0;
     while (c != EOF) {
         if (pos + 1 >= *n) {
             size_t new_size = *n + (*n >> 2);
-            if (new_size < 128) new_size = 128;
+            if (new_size < 128) {
+                new_size = 128;
+            }
             char *new_ptr = xrealloc(*lineptr, new_size);
-            if (new_ptr == NULL) return -1;
+            if (new_ptr == NULL) {
+                return -1;
+            }
             *n = new_size;
             *lineptr = new_ptr;
         }
         ((unsigned char *)(*lineptr))[pos++] = (unsigned char)c;
-        if (c == '\n') break;
+        if (c == '\n') {
+            break;
+        }
         c = fgetc(stream);
     }
     (*lineptr)[pos] = '\0';
     return (ssize_t)pos;
 }
+void term_init(void) {
+    hIn = GetStdHandle(STD_INPUT_HANDLE);
+    if (hIn == INVALID_HANDLE_VALUE) {
+        die("GetStdHandle");
+    }
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hStdOut == INVALID_HANDLE_VALUE) {
+        die("GetStdHandle");
+    }
+    DWORD outMode;
+    if (GetConsoleMode(hStdOut, &outMode)) {
+        DWORD withVT = outMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        if (SetConsoleMode(hStdOut, withVT)) {
+            vt_alternate = TRUE;
+            old_hOut = hStdOut;
+            hOut = hStdOut;
+        } else {
+            SetConsoleMode(hStdOut, outMode);
+        }
+    }
+    term_switch_to_alt();
+    save_current_title();
+    term_set_title("nc");
+    term_enable_raw();
+}
+void term_enable_raw(void) {
+    atexit(term_disable_raw);
+    if (!GetConsoleMode(hIn, &orig_console_mode)) {
+        die("GetConsoleMode");
+    }
+    DWORD new_mode = orig_console_mode & (DWORD)~(
+        ENABLE_LINE_INPUT |
+        ENABLE_ECHO_INPUT |
+        ENABLE_PROCESSED_INPUT |
+        ENABLE_PROCESSED_OUTPUT |
+        ENABLE_WRAP_AT_EOL_OUTPUT
+    );
+    if (!SetConsoleMode(hIn, new_mode)) {
+        die("SetConsoleMode");
+    }
+}
+void term_disable_raw(void) {
+    if (!SetConsoleMode(hIn, orig_console_mode)) {
+        die("SetConsoleMode");
+    }
+}
 void term_write(const unsigned char *s, size_t len) {
-    if (len == 0) return;
+    if (len == 0) {
+        return;
+    }
     int required = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s, (int)len, NULL, 0);
     static wchar_t *wbuf = NULL;
     static size_t wcap = 0;
@@ -100,95 +158,12 @@ size_t term_read(unsigned char **s, int *special_key) {
         }
     }
     int size = WideCharToMultiByte(CP_UTF8, 0, wcs, wlen, (LPSTR)buf, MAXCHARLEN, NULL, NULL);
-    if (size <= 0) die("WideCharToMultiByte");
+    if (size <= 0) {
+        die("WideCharToMultiByte");
+    }
     buf[size] = '\0';
     *s = buf;
     return (size_t)size;
-}
-void term_init(void) {
-    hIn = GetStdHandle(STD_INPUT_HANDLE);
-    if (hIn == INVALID_HANDLE_VALUE) die("GetStdHandle");
-    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (hStdOut == INVALID_HANDLE_VALUE) die("GetStdHandle");
-    DWORD outMode;
-    if (GetConsoleMode(hStdOut, &outMode)) {
-        DWORD withVT = outMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-        if (SetConsoleMode(hStdOut, withVT)) {
-            vt_alternate = TRUE;
-            old_hOut = hStdOut;
-            hOut = hStdOut;
-        } else {
-            SetConsoleMode(hStdOut, outMode);
-        }
-    }
-    term_switch_to_alt();
-    save_current_title();
-    term_set_title("nc");
-    term_enable_raw();
-}
-void term_get_win_size(size_t *x, size_t *y) {
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    if (!GetConsoleScreenBufferInfo(hOut, &csbi)) {
-        die("GetConsoleScreenBufferInfo");
-    }
-    if (x) *x = (size_t)(csbi.srWindow.Right - csbi.srWindow.Left + 1);
-    if (y) *y = (size_t)(csbi.srWindow.Bottom - csbi.srWindow.Top + 1);
-}
-void term_clear_line(void) {
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    if (!GetConsoleScreenBufferInfo(hOut, &csbi)) die("GetConsoleScreenBufferInfo");
-    COORD coordScreen;
-    coordScreen.X = 0;
-    coordScreen.Y = csbi.dwCursorPosition.Y;
-    DWORD cCharsWritten;
-    if (!FillConsoleOutputCharacter(hOut, (TCHAR)' ', (DWORD)csbi.dwSize.X, coordScreen, &cCharsWritten)) die("FillConsoleOutputCharacter");
-    if (!FillConsoleOutputAttribute(hOut, csbi.wAttributes, (DWORD)csbi.dwSize.X, coordScreen, &cCharsWritten)) die("FillConsoleOutputAttribute");
-    if (!SetConsoleCursorPosition(hOut, coordScreen)) die("SetConsoleCursorPosition");
-}
-void term_clear_screen(void) {
-    COORD coordScreen = {0, 0};
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    if (!GetConsoleScreenBufferInfo(hOut, &csbi)) die("GetConsoleScreenBufferInfo");
-    DWORD dwConSize = (DWORD)csbi.dwSize.X * (DWORD)csbi.dwSize.Y;
-    DWORD cCharsWritten;
-    if (!FillConsoleOutputCharacter(hOut, (TCHAR)' ', dwConSize, coordScreen, &cCharsWritten)) die("FillConsoleOutputCharacter");
-    if (!FillConsoleOutputAttribute(hOut, csbi.wAttributes, dwConSize, coordScreen, &cCharsWritten)) die("FillConsoleOutputAttribute");
-    if (!SetConsoleCursorPosition(hOut, coordScreen)) die("SetConsoleCursorPosition");
-}
-void term_set_title(const char *title) {
-    TCHAR new_title[MAX_PATH];
-    string_to_tchar_array(title, new_title);
-    if (!SetConsoleTitle(new_title)) {
-        die("SetConsoleTitle");
-    }
-    atexit(restore_title);
-}
-void term_disable_raw(void) {
-    if (!SetConsoleMode(hIn, orig_console_mode)) {
-        die("SetConsoleMode");
-    }
-}
-void term_enable_raw(void) {
-    atexit(term_disable_raw);
-    if (!GetConsoleMode(hIn, &orig_console_mode)) {
-        die("GetConsoleMode");
-    }
-    if (!(SetConsoleMode(hIn, orig_console_mode & (DWORD)~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT)))) {
-        die("SetConsoleMode");
-    }
-}
-void term_switch_to_norm(void) {
-	if (vt_alternate) {
-		static const char seq[] = "\x1b[?1049l";
-		term_write((const unsigned char *)seq, sizeof(seq) - 1);
-	} else {
-		if (old_hOut == NULL || old_hOut == INVALID_HANDLE_VALUE) {
-			return;
-		}
-		if (!SetConsoleActiveScreenBuffer(old_hOut)) {
-			die("SetConsoleActiveScreenBuffer");
-		}
-	}
 }
 void term_switch_to_alt(void) {
     if (vt_alternate) {
@@ -197,7 +172,13 @@ void term_switch_to_alt(void) {
         atexit(term_switch_to_norm);
     } else {
         old_hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-        hOut = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+        hOut = CreateConsoleScreenBuffer(
+            GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            NULL,
+            CONSOLE_TEXTMODE_BUFFER,
+            NULL
+        );
         if (old_hOut == INVALID_HANDLE_VALUE || hOut == INVALID_HANDLE_VALUE) {
             die("CreateConsoleScreenBuffer");
         }
@@ -207,17 +188,67 @@ void term_switch_to_alt(void) {
         atexit(term_switch_to_norm);
     }
 }
-void term_hide_cursor(void) {
-    CONSOLE_CURSOR_INFO cursorInfo;
-    if (!GetConsoleCursorInfo(hOut, &cursorInfo)) die("GetConsoleCursorInfo");
-    cursorInfo.bVisible = 0;
-    if (!SetConsoleCursorInfo(hOut, &cursorInfo)) die("SetConsoleCursorInfo");
+void term_switch_to_norm(void) {
+    if (vt_alternate) {
+        static const char seq[] = "\x1b[?1049l";
+        term_write((const unsigned char *)seq, sizeof(seq) - 1);
+    } else {
+        if (old_hOut == NULL || old_hOut == INVALID_HANDLE_VALUE) {
+            return;
+        }
+        if (!SetConsoleActiveScreenBuffer(old_hOut)) {
+            die("SetConsoleActiveScreenBuffer");
+        }
+    }
 }
-void term_show_cursor(void) {
-    CONSOLE_CURSOR_INFO cursorInfo;
-    if (!GetConsoleCursorInfo(hOut, &cursorInfo)) die("GetConsoleCursorInfo");
-    cursorInfo.bVisible = 1;
-    if (!SetConsoleCursorInfo(hOut, &cursorInfo)) die("SetConsoleCursorInfo");
+void term_get_win_size(size_t *x, size_t *y) {
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if (!GetConsoleScreenBufferInfo(hOut, &csbi)) {
+        die("GetConsoleScreenBufferInfo");
+    }
+    if (x) {
+        *x = (size_t)(csbi.srWindow.Right - csbi.srWindow.Left + 1);
+    }
+    if (y) {
+        *y = (size_t)(csbi.srWindow.Bottom - csbi.srWindow.Top + 1);
+    }
+}
+void term_clear_screen(void) {
+    COORD coordScreen = {0, 0};
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if (!GetConsoleScreenBufferInfo(hOut, &csbi)) {
+        die("GetConsoleScreenBufferInfo");
+    }
+    DWORD dwConSize = (DWORD)csbi.dwSize.X * (DWORD)csbi.dwSize.Y;
+    DWORD cCharsWritten;
+    if (!FillConsoleOutputCharacter(hOut, (TCHAR)' ', dwConSize, coordScreen, &cCharsWritten)) {
+        die("FillConsoleOutputCharacter");
+    }
+    if (!FillConsoleOutputAttribute(hOut, csbi.wAttributes, dwConSize, coordScreen, &cCharsWritten)) {
+        die("FillConsoleOutputAttribute");
+    }
+    if (!SetConsoleCursorPosition(hOut, coordScreen)) {
+        die("SetConsoleCursorPosition");
+    }
+}
+void term_clear_line(void) {
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if (!GetConsoleScreenBufferInfo(hOut, &csbi)) {
+        die("GetConsoleScreenBufferInfo");
+    }
+    COORD coordScreen;
+    coordScreen.X = 0;
+    coordScreen.Y = csbi.dwCursorPosition.Y;
+    DWORD cCharsWritten;
+    if (!FillConsoleOutputCharacter(hOut, (TCHAR)' ', (DWORD)csbi.dwSize.X, coordScreen, &cCharsWritten)) {
+        die("FillConsoleOutputCharacter");
+    }
+    if (!FillConsoleOutputAttribute(hOut, csbi.wAttributes, (DWORD)csbi.dwSize.X, coordScreen, &cCharsWritten)) {
+        die("FillConsoleOutputAttribute");
+    }
+    if (!SetConsoleCursorPosition(hOut, coordScreen)) {
+        die("SetConsoleCursorPosition");
+    }
 }
 void term_set_cursor(size_t x, size_t y) {
     COORD coord;
@@ -225,6 +256,44 @@ void term_set_cursor(size_t x, size_t y) {
     coord.Y = (SHORT)y;
     if (!SetConsoleCursorPosition(hOut, coord)) {
         die("SetConsoleCursorPosition");
+    }
+}
+void term_hide_cursor(void) {
+    CONSOLE_CURSOR_INFO cursorInfo;
+    if (!GetConsoleCursorInfo(hOut, &cursorInfo)) {
+        die("GetConsoleCursorInfo");
+    }
+    cursorInfo.bVisible = 0;
+    if (!SetConsoleCursorInfo(hOut, &cursorInfo)) {
+        die("SetConsoleCursorInfo");
+    }
+}
+void term_show_cursor(void) {
+    CONSOLE_CURSOR_INFO cursorInfo;
+    if (!GetConsoleCursorInfo(hOut, &cursorInfo)) {
+        die("GetConsoleCursorInfo");
+    }
+    cursorInfo.bVisible = 1;
+    if (!SetConsoleCursorInfo(hOut, &cursorInfo)) {
+        die("SetConsoleCursorInfo");
+    }
+}
+void term_set_title(const char *title) {
+    TCHAR new_title[MAX_PATH];
+    string_to_tchar_array(title, new_title);
+    if (!SetConsoleTitle(new_title)) {
+        die("SetConsoleTitle");
+    }
+    atexit(restore_title);
+}
+static void save_current_title(void) {
+    if (!GetConsoleTitle(old_title, MAX_PATH)) {
+        die("GetConsoleTitle");
+    }
+}
+static void restore_title(void) {
+    if (!SetConsoleTitle(old_title)) {
+        die("SetConsoleTitle");
     }
 }
 bool_t fs_exists(const char *path) {
@@ -279,7 +348,9 @@ void fs_canonicalize(const char *path, char *out, size_t size) {
 }
 FILE *fs_fopen(const char *path, const char *mode) {
     int wpath_len = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0);
-    if (wpath_len <= 0) return NULL;
+    if (wpath_len <= 0) {
+        return NULL;
+    }
     wchar_t *wpath = (wchar_t *)xmalloc((size_t)wpath_len * sizeof(wchar_t));
     if (MultiByteToWideChar(CP_UTF8, 0, path, -1, wpath, wpath_len) != wpath_len) {
         free(wpath);
@@ -321,7 +392,9 @@ void cmdline_init(int *argc, char ***argv) {
     *argv = utf8_argv;
 }
 void cmdline_free(int argc, char **argv) {
-    if (!argv) return;
+    if (!argv) {
+        return;
+    }
     for (int i = 0; i < argc; i++) {
         free(argv[i]);
     }
@@ -362,12 +435,12 @@ static wchar_t get_wch(int *special_key) {
             *special_key = CTRL_KEY(keycode);
         } else {
             switch (keycode) {
-                case VK_END:   *special_key = CTRL_END;        break;
-                case VK_HOME:  *special_key = CTRL_HOME;       break;
-                case VK_LEFT:  *special_key = CTRL_ARROW_LEFT; break;
-                case VK_UP:    *special_key = CTRL_ARROW_UP;   break;
-                case VK_RIGHT: *special_key = CTRL_ARROW_RIGHT;break;
-                case VK_DOWN:  *special_key = CTRL_ARROW_DOWN; break;
+                case VK_END:   *special_key = CTRL_END;         break;
+                case VK_HOME:  *special_key = CTRL_HOME;        break;
+                case VK_LEFT:  *special_key = CTRL_ARROW_LEFT;  break;
+                case VK_UP:    *special_key = CTRL_ARROW_UP;    break;
+                case VK_RIGHT: *special_key = CTRL_ARROW_RIGHT; break;
+                case VK_DOWN:  *special_key = CTRL_ARROW_DOWN;  break;
             }
         }
     } else if (keycode >= VK_F1 && keycode <= VK_F12) {
@@ -401,14 +474,4 @@ static bool_t is_ctrl_pressed(INPUT_RECORD *ir) {
 }
 static void string_to_tchar_array(const char *s, TCHAR t[]) {
     while ((*t++ = *s++));
-}
-static void save_current_title(void) {
-    if (!GetConsoleTitle(old_title, MAX_PATH)) {
-        die("GetConsoleTitle");
-    }
-}
-static void restore_title(void) {
-    if (!SetConsoleTitle(old_title)) {
-        die("SetConsoleTitle");
-    }
 }

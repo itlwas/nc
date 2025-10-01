@@ -1,6 +1,6 @@
 #include "nc.h"
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 Editor editor;
 int main(int argc, char **argv) {
     cmdline_init(&argc, &argv);
