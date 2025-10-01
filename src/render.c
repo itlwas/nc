@@ -1,4 +1,4 @@
-#include "yoc.h"
+#include "nc.h"
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
@@ -152,7 +152,7 @@ static void render_rows(void) {
                 editor.file.buffer.begin->len == 0
             ) {
                 char   msg[32];
-                snprintf(msg, sizeof(msg), "yoc ~ %s", YOC_VERSION);
+                snprintf(msg, sizeof(msg), "nc ~ %s", NC_VERSION);
                 size_t welcomelen = strlen(msg);
                 size_t padding    = (avail_cols > welcomelen) ? (avail_cols - welcomelen) / 2 : 0;
                 size_t pos        = 0;

@@ -1,4 +1,4 @@
-#include "yoc.h"
+#include "nc.h"
 #include <string.h>
 #include <stdio.h>
 #ifdef _WIN32
@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
                     options_ended = 1;
                     is_filepath = 0;
                 } else if (wcscmp(warg, L"-v") == 0 || wcscmp(warg, L"--version") == 0) {
-                    printf("[v%s] :: [%s] :: [%s]\n", YOC_VERSION, YOC_HASH, YOC_DATE);
+                    printf("[v%s] :: [%s] :: [%s]\n", NC_VERSION, NC_HASH, NC_DATE);
                     LocalFree(wargv);
                     return 0;
                 }
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
                 options_ended = 1;
                 is_filepath = 0;
             } else if (strcmp(arg, "-v") == 0 || strcmp(arg, "--version") == 0) {
-                printf("[v%s] :: [%s] :: [%s]\n", YOC_VERSION, YOC_HASH, YOC_DATE);
+                printf("[v%s] :: [%s] :: [%s]\n", NC_VERSION, NC_HASH, NC_DATE);
                 return 0;
             }
         }

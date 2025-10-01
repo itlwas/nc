@@ -1,4 +1,4 @@
-#include "yoc.h"
+#include "nc.h"
 #include <string.h>
 #include <ctype.h>
 typedef struct {

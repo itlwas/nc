@@ -1,4 +1,4 @@
-#include "yoc.h"
+#include "nc.h"
 #include <unistd.h>
 #include <termios.h>
 #include <sys/ioctl.h>
@@ -121,7 +121,7 @@ size_t term_read(unsigned char **s, int *special_key) {
 }
 void term_init(void) {
     term_switch_to_alt();
-    term_set_title("yoc");
+    term_set_title("nc");
     term_enable_raw();
 }
 void term_get_win_size(size_t *x, size_t *y) {

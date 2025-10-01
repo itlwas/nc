@@ -1,4 +1,4 @@
-#include "yoc.h"
+#include "nc.h"
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>

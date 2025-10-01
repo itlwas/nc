@@ -1,4 +1,4 @@
-#include "yoc.h"
+#include "nc.h"
 #include <windows.h>
 #include <stdio.h>
 #include <errno.h>
@@ -123,7 +123,7 @@ void term_init(void) {
     }
     term_switch_to_alt();
     save_current_title();
-    term_set_title("yoc");
+    term_set_title("nc");
     term_enable_raw();
 }
 void term_get_win_size(size_t *x, size_t *y) {

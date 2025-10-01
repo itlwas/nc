@@ -1,13 +1,12 @@
-# Yoc
+# NC
 
-> **Yocto** - the smallest SI prefix (10⁻²⁴). **Yoc** - the smallest, fastest terminal text editor.
+> **NC** - the smallest, fastest terminal text editor.
 
 [![Build Status](https://github.com/itlwas/yoc-editor/workflows/nightly/badge.svg)](https://github.com/itlwas/yoc-editor/actions)
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/itlwas/yoc-editor/releases)
-[![AUR](https://img.shields.io/aur/version/yoc)](https://aur.archlinux.org/packages/yoc)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A lightning-fast, ultra-minimal terminal text editor written in pure C. Born from the philosophy that less is more, Yoc delivers maximum performance with minimal resource consumption.
+A lightning-fast, ultra-minimal terminal text editor written in pure C. Born from the philosophy that less is more, NC delivers maximum performance with minimal resource consumption.
 
 ## ✨ Features
 
@@ -23,25 +22,11 @@ A lightning-fast, ultra-minimal terminal text editor written in pure C. Born fro
 
 ## 🚀 Philosophy
 
-Yoc embodies the principle of **maximum efficiency through minimalism**. Every line of code serves a purpose, every feature is essential. No bloat, no complexity - just pure, fast text editing.
+NC embodies the principle of **maximum efficiency through minimalism**. Every line of code serves a purpose, every feature is essential. No bloat, no complexity - just pure, fast text editing.
 
-> *"The best code is no code at all"* - but when you need a text editor, Yoc is there.
+> *"The best code is no code at all"* - but when you need a text editor, NC is there.
 
 ## 📦 Installation
-
-### Arch Linux (AUR)
-```bash
-# Using yay
-yay -S yoc
-
-# Using paru
-paru -S yoc
-
-# Manual installation from AUR
-git clone https://aur.archlinux.org/yoc.git
-cd yoc
-makepkg -si
-```
 
 ### From Source
 ```bash
@@ -49,7 +34,7 @@ makepkg -si
 git clone https://github.com/itlwas/yoc-editor.git
 cd yoc-editor
 make release
-sudo cp yoc /usr/bin/
+sudo cp nc /usr/bin/
 ```
 
 **Requirements**: C compiler (GCC, Clang, or MSVC) and Make.
@@ -57,8 +42,8 @@ sudo cp yoc /usr/bin/
 ## 🎮 Usage
 
 ```bash
-yoc              # Start with empty buffer
-yoc filename.txt # Open existing file
+nc              # Start with empty buffer
+nc filename.txt # Open existing file
 ```
 
 ## 🔧 Technical Details
@@ -75,12 +60,12 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🤝 About
 
-Yoc is a personal project by [@itlwas](https://github.com/itlwas), built on a focused, minimalist philosophy. The name itself comes from "Yocto" — the smallest SI prefix — representing this core principle.
+NC is a personal project by [@itlwas](https://github.com/itlwas), built on a focused, minimalist philosophy.
 
 To preserve the project's singular vision, external contributions are not currently accepted. You are, however, strongly encouraged to fork the repository and make it your own.
 
 ### Inspiration
-Originally based on [femto](https://github.com/wadiim/femto), Yoc has grown into its own unique editor with significant improvements and optimizations.
+Originally based on [femto](https://github.com/wadiim/femto), NC has grown into its own unique editor with significant improvements and optimizations.
 
 ---
 

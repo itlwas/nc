@@ -1,6 +1,6 @@
 # Build artifacts
-yoc
-yoc.exe
+nc
+nc.exe
 
 # Object files
 obj/

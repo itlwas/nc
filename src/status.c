@@ -1,4 +1,4 @@
-#include "yoc.h"
+#include "nc.h"
 #include <string.h>
 #include <limits.h>
 #define STATUS_BG_ON  "\x1b[47m\x1b[30m"

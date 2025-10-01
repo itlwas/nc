@@ -1,5 +1,5 @@
-#ifndef YOC_H
-#define YOC_H
+#ifndef NC_H
+#define NC_H
 #define _DEFAULT_SOURCE
 #define _BSD_SOURCE
 #define _GNU_SOURCE
