@@ -26,7 +26,6 @@ void file_load(File *file) {
     size_t line_cap = 0;
     ssize_t line_len;
     bool_t first_line = TRUE;
-    bool_t had_trailing_newline = FALSE;
     Buffer *buf = &file->buffer;
 #ifdef _WIN32
     int wlen = MultiByteToWideChar(CP_UTF8, 0, file->path, -1, NULL, 0);
@@ -42,8 +41,7 @@ void file_load(File *file) {
     setvbuf(f, NULL, _IOFBF, 65536);
     buf->digest = 0;
     while ((line_len = getline(&line, &line_cap, f)) != -1) {
-        had_trailing_newline = FALSE;
-        if (line_len > 0 && line[line_len - 1] == '\n') line_len--, had_trailing_newline = TRUE;
+        if (line_len > 0 && line[line_len - 1] == '\n') line_len--;
         if (line_len > 0 && line[line_len - 1] == '\r') line_len--;
         if (first_line) {
             line_insert_strn(buf->curr, 0, (unsigned char *)line, (size_t)line_len);
@@ -58,12 +56,6 @@ void file_load(File *file) {
             newline->hash = fnv1a_hash(newline->s, newline->len);
             buf->digest += newline->hash;
         }
-    }
-    if (had_trailing_newline) {
-        Line *newline = line_new(buf->curr, NULL);
-        buf->curr = newline;
-        buf->num_lines++;
-        buf->digest += newline->hash;
     }
     free(line);
     fclose(f);
@@ -108,13 +100,6 @@ void file_save(File *file) {
         }
     }
     fclose(f);
-    Line *last = file->buffer.begin;
-    while (last->next) last = last->next;
-    if (last->len > 0 && !last->next) {
-        Line *newline = line_new(last, NULL);
-        file->buffer.num_lines++;
-        file->buffer.digest += newline->hash;
-    }
     file->saved_digest = file->buffer.digest;
     file->is_modified = FALSE;
 }
