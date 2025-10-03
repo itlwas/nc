@@ -74,7 +74,7 @@ void file_save(File *file) {
     }
     for (Line *line = file->buffer.begin; line; line = line->next) {
         fwrite(line->s, 1, line->len, f);
-        if (line->next || line->len > 0) {
+        if (line->next) {
             fputc('\n', f);
         }
     }
