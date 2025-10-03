@@ -111,7 +111,7 @@ static void collect_matches(const unsigned char *needle, size_t nlen, FindMatchL
 static void draw_segment(Line *line, size_t screen_y, size_t rx_start, size_t rx_width, int style) {
     if (rx_width == 0 || screen_y >= editor.rows) return;
     size_t lineno_pad = compute_lineno_pad();
-    bool_t scrollbar = (editor.file.buffer.num_lines > editor.rows);
+    bool scrollbar = (editor.file.buffer.num_lines > editor.rows);
     size_t avail_cols = editor.cols - (scrollbar ? 1 : 0);
     size_t text_cols  = avail_cols - (show_line_numbers ? lineno_pad : 0);
     size_t vis_start = (rx_start < editor.window.x) ? editor.window.x : rx_start;
@@ -251,23 +251,23 @@ static void show_status_match(size_t idx, size_t total) {
                    (unsigned long)(idx + 1), (unsigned long)total);
     status_msg(buf);
 }
-bool_t find_start(void) {
+bool find_start(void) {
     Line *input = line_new(NULL, NULL);
 
     if (!status_input(input, "Find: ", NULL)) {
         line_free(input);
-        return FALSE;
+        return false;
     }
     if (input->len == 0) {
         line_free(input);
-        return FALSE;
+        return false;
     }
     FindMatchList list;
     collect_matches(input->s, input->len, &list);
     if (list.count == 0) {
         status_msg("No matches found");
         line_free(input);
-        return FALSE;
+        return false;
     }
     size_t cur = nearest_match_index(&list);
     move_cursor_to(list.items[cur].y, list.items[cur].start_rx);
@@ -316,5 +316,5 @@ bool_t find_start(void) {
     }
     if (list.items) free(list.items);
     line_free(input);
-    return TRUE;
+    return true;
 }

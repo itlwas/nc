@@ -8,7 +8,7 @@ static void delete_char(void);
 static void delete_empty_line(void);
 static void break_line(void);
 static void join_with_prev_line(void);
-static bool_t is_blank(Line *line);
+static bool is_blank(Line *line);
 static void pre_line_change(Line *line);
 static void post_line_change(Line *line);
 static void edit_duplicate_line(void);
@@ -79,8 +79,8 @@ void edit_fix_cursor_x(void) {
 }
 void edit_move_prev_word(void) {
     size_t pos = mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x);
-    bool_t seen_word = FALSE;
-    bool_t step_forward = FALSE;
+    bool seen_word = false;
+    bool step_forward = false;
     for (;;) {
         if (pos == 0) {
             if (editor.file.buffer.curr->prev == NULL) break;
@@ -90,10 +90,10 @@ void edit_move_prev_word(void) {
         }
         pos = move_mbleft(editor.file.buffer.curr->s, pos);
         if (is_alnum_mbchar(editor.file.buffer.curr->s + pos)) {
-            seen_word = TRUE;
+            seen_word = true;
             if (pos == 0) break;
         } else if (seen_word) {
-            step_forward = TRUE;
+            step_forward = true;
             break;
         }
     }
@@ -106,20 +106,20 @@ void edit_move_prev_word(void) {
 }
 void edit_move_next_word(void) {
     size_t pos = mbnum_to_index(editor.file.buffer.curr->s, editor.file.cursor.x);
-    bool_t started_on_word = is_alnum_mbchar(editor.file.buffer.curr->s + pos);
-    bool_t seen_space = !started_on_word;
+    bool started_on_word = is_alnum_mbchar(editor.file.buffer.curr->s + pos);
+    bool seen_space = !started_on_word;
     for (;;) {
         if (editor.file.buffer.curr->s[pos] == '\0') {
             if (editor.file.buffer.curr->next == NULL) break;
             editor.file.buffer.curr = editor.file.buffer.curr->next;
             ++editor.file.cursor.y;
-            seen_space = TRUE;
+            seen_space = true;
             pos = 0;
         } else {
             pos = move_mbright(editor.file.buffer.curr->s, pos);
         }
         if (!is_alnum_mbchar(editor.file.buffer.curr->s + pos)) {
-            seen_space = TRUE;
+            seen_space = true;
         } else if (seen_space) {
             break;
         }
@@ -379,7 +379,7 @@ static void edit_duplicate_line(void) {
     edit_fix_cursor_x();
     editor.file.cursor.rx = x_to_rx(dup, editor.file.cursor.x);
     desired_rx = editor.file.cursor.rx;
-    editor.file.is_modified = TRUE;
+    editor.file.is_modified = true;
 }
 static void edit_goto_line(void) {
     Line *input = line_new(NULL, NULL);
@@ -458,13 +458,13 @@ void edit_process_key(void) {
     }
     render_scroll();
 }
-static bool_t is_blank(Line *line) {
+static bool is_blank(Line *line) {
     for (size_t i = 0; i < line->len; ++i) {
         if (line->s[i] != ' ' && line->s[i] != '\t') {
-            return FALSE;
+            return false;
         }
     }
-    return TRUE;
+    return true;
 }
 static void pre_line_change(Line *line) {
     editor.file.buffer.digest -= line->hash;

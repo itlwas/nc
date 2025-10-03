@@ -77,10 +77,10 @@ size_t utf8_len(unsigned char c) {
     if ((c & 0xF8u) == 0xF0u && LIKELY(c <= 0xF4u)) return 4;
     return 0;
 }
-bool_t is_continuation_byte(unsigned char c) {
-    return (bool_t)UNLIKELY(((c & 0xC0u) == 0x80u));
+bool is_continuation_byte(unsigned char c) {
+    return (bool)UNLIKELY(((c & 0xC0u) == 0x80u));
 }
-bool_t is_alnum_mbchar(const unsigned char *s) {
+bool is_alnum_mbchar(const unsigned char *s) {
     if ((*s & 0x80u) == 0) {
         return isalnum((unsigned char)*s);
     }

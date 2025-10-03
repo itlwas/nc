@@ -10,9 +10,9 @@ HANDLE hIn, hOut;
 static HANDLE old_hOut;
 static TCHAR old_title[PATH_MAX];
 static DWORD orig_console_mode;
-static bool_t vt_alternate = FALSE;
+static bool vt_alternate = false;
 static wchar_t get_wch(int *special_key);
-static bool_t is_ctrl_pressed(INPUT_RECORD *ir);
+static bool is_ctrl_pressed(INPUT_RECORD *ir);
 static void write_console_wide(const wchar_t *ws, size_t wlen);
 static void save_current_title(void);
 static void restore_title(void);
@@ -69,7 +69,7 @@ void term_init(void) {
     if (GetConsoleMode(hStdOut, &outMode)) {
         DWORD withVT = outMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
         if (SetConsoleMode(hStdOut, withVT)) {
-            vt_alternate = TRUE;
+            vt_alternate = true;
             old_hOut = hStdOut;
             hOut = hStdOut;
         } else {
@@ -296,15 +296,15 @@ static void restore_title(void) {
         die("SetConsoleTitle");
     }
 }
-bool_t fs_exists(const char *path) {
+bool fs_exists(const char *path) {
     int wlen = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0);
     if (wlen <= 0) {
-        return FALSE;
+        return false;
     }
     wchar_t *wpath = (wchar_t *)xmalloc((size_t)wlen * sizeof(wchar_t));
     if (MultiByteToWideChar(CP_UTF8, 0, path, -1, wpath, wlen) != wlen) {
         free(wpath);
-        return FALSE;
+        return false;
     }
     DWORD dwAttrib = GetFileAttributesW(wpath);
     free(wpath);
@@ -469,7 +469,7 @@ static wchar_t get_wch(int *special_key) {
     }
     return retval;
 }
-static bool_t is_ctrl_pressed(INPUT_RECORD *ir) {
+static bool is_ctrl_pressed(INPUT_RECORD *ir) {
     return (ir->Event.KeyEvent.dwControlKeyState & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) != 0;
 }
 static void string_to_tchar_array(const char *s, TCHAR t[]) {

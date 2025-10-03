@@ -7,9 +7,9 @@ static size_t   rowbuf_cap             = 0;
 static char    *spaces                 = NULL;
 static size_t   spaces_cap             = 0;
 static size_t   lineno_pad             = 0;
-static bool_t   prev_scrollbar_visible = FALSE;
+static bool     prev_scrollbar_visible = false;
 static uint64_t cached_digest          = 0;
-bool_t show_line_numbers = TRUE;
+bool show_line_numbers = true;
 static void render_main(void);
 static void render_rows(void);
 static void render_status_bar(void);
@@ -45,7 +45,7 @@ void render_refresh(void) {
     term_show_cursor();
 }
 void render_scroll(void) {
-    bool_t buffer_changed = (editor.file.buffer.digest != cached_digest);
+    bool buffer_changed = (editor.file.buffer.digest != cached_digest);
     if (editor.top_line == NULL) {
         editor.top_line = editor.file.buffer.begin;
     }
@@ -124,7 +124,7 @@ static void render_main(void) {
 static void render_rows(void) {
     Line *line = editor.top_line;
     size_t digits = lineno_pad ? lineno_pad - 2 : 1;
-    bool_t scrollbar = (editor.file.buffer.num_lines > editor.rows);
+    bool scrollbar = (editor.file.buffer.num_lines > editor.rows);
     size_t bar_height = 0, bar_start = 0;
     if (scrollbar) {
         size_t total_lines = editor.file.buffer.num_lines;
@@ -267,9 +267,9 @@ static void render_status_bar(void) {
 }
 static void ensure_screen_buffer(void) {
     const size_t rows_needed = editor.rows + 1;
-    bool_t size_changed = !(editor.screen_lines &&
-                            editor.screen_rows == rows_needed &&
-                            editor.screen_cols == editor.cols);
+    bool size_changed = !(editor.screen_lines &&
+                          editor.screen_rows == rows_needed &&
+                          editor.screen_cols == editor.cols);
     if (!size_changed) return;
     term_clear_screen();
     if (editor.screen_lines) {

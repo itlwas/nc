@@ -1,12 +1,12 @@
 #ifndef NC_H
 #define NC_H
 #define _DEFAULT_SOURCE
-#define _BSD_SOURCE
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #ifdef _WIN32
 #include <windows.h>
 #if defined(_MSC_VER)
@@ -24,8 +24,6 @@ typedef SSIZE_T ssize_t;
 #define LIKELY(x)   (x)
 #define UNLIKELY(x) (x)
 #endif
-#define TRUE  1
-#define FALSE 0
 #define BUFF_SIZE           128
 #define MAXCHARLEN          6
 #define VSCROLL_MARGIN      3
@@ -35,7 +33,6 @@ typedef SSIZE_T ssize_t;
 #define LINE_MBLEN_UNCACHED  ((size_t)-1)
 #define SCREEN_ROWS(x)  (((x) <= 1) ? 1 : ((x) - 1))
 #define CTRL_KEY(k)     ((k) & 0x1f)
-typedef int bool_t;
 typedef struct line_t Line;
 struct line_t {
     unsigned char *s;
@@ -76,7 +73,7 @@ typedef struct {
     Pos       cursor;
     Status    status;
     uint64_t  saved_digest;
-    bool_t    is_modified;
+    bool      is_modified;
 } File;
 typedef struct {
     File     file;
@@ -113,7 +110,7 @@ enum key {
 };
 extern Editor editor;
 extern S_Mode status_mode;
-extern bool_t show_line_numbers;
+extern bool show_line_numbers;
 #ifdef _WIN32
 extern HANDLE hIn;
 extern HANDLE hOut;
@@ -123,12 +120,12 @@ void   *xmalloc(size_t size);
 void   *xrealloc(void *ptr, size_t size);
 void    die(const char *msg);
 size_t  utf8_len(unsigned char c);
-bool_t  is_continuation_byte(unsigned char c);
+bool    is_continuation_byte(unsigned char c);
 size_t  move_mbleft(const unsigned char *s, size_t pos);
 size_t  move_mbright(const unsigned char *s, size_t pos);
 size_t  index_to_mbnum(const unsigned char *s, size_t n);
 size_t  mbnum_to_index(const unsigned char *s, size_t n);
-bool_t  is_alnum_mbchar(const unsigned char *s);
+bool    is_alnum_mbchar(const unsigned char *s);
 size_t  char_display_width(const unsigned char *s);
 size_t  str_width(const unsigned char *s, size_t len);
 size_t  length_to_width(const unsigned char *s, size_t len);
@@ -157,7 +154,7 @@ void    status_init(void);
 void    status_free(void);
 void    status_msg(const char *msg);
 void    status_print(void);
-bool_t  status_input(Line *input, char *msg, const char *placeholder);
+bool    status_input(Line *input, char *msg, const char *placeholder);
 void    edit_process_key(void);
 void    edit_insert(const unsigned char *s);
 void    edit_enter(void);
@@ -181,16 +178,16 @@ void    file_init(File *file);
 void    file_free(File *file);
 void    file_load(File *file);
 void    file_save(File *file);
-bool_t  file_save_prompt(void);
+bool    file_save_prompt(void);
 void    file_quit_prompt(void);
-bool_t  file_open_prompt(void);
+bool    file_open_prompt(void);
 const char *extract_filename(const char *path);
-bool_t  fs_exists(const char *path);
+bool    fs_exists(const char *path);
 void    fs_canonicalize(const char *path, char *out, size_t size);
 FILE   *fs_fopen(const char *path, const char *mode);
 void    cmdline_init(int *argc, char ***argv);
 void    cmdline_free(int argc, char **argv);
-bool_t  find_start(void);
+bool    find_start(void);
 void    term_init(void);
 void    term_get_win_size(size_t *x, size_t *y);
 void    term_enable_raw(void);

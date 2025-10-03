@@ -13,7 +13,7 @@ S_Mode status_mode;
 static void   status_realloc(size_t len);
 static void   status_set_default(void);
 static void   status_input_print(StatusInput *statin);
-static bool_t status_process_input(StatusInput *statin);
+static bool   status_process_input(StatusInput *statin);
 static void   status_do_insert(StatusInput *statin, unsigned char *s);
 static void   status_do_backspace(StatusInput *statin);
 static void   status_do_delete_forward(StatusInput *statin);
@@ -67,17 +67,17 @@ void status_print(void) {
     term_write((const unsigned char *)STATUS_BG_OFF, sizeof(STATUS_BG_OFF) - 1);
     status_mode = NORMAL;
 }
-bool_t status_input(Line *input, char *msg, const char *placeholder) {
+bool status_input(Line *input, char *msg, const char *placeholder) {
     StatusInput statin = {0, 0, msg, input};
     if (placeholder) {
         line_insert_str(input, 0, (unsigned char *)placeholder);
         statin.cx = strlen(placeholder);
     }
-    bool_t ret = status_process_input(&statin);
+    bool ret = status_process_input(&statin);
     status_mode = NORMAL;
     return ret;
 }
-static bool_t status_process_input(StatusInput *statin) {
+static bool status_process_input(StatusInput *statin) {
     int special_key;
     unsigned char *s;
     size_t len;
@@ -89,8 +89,8 @@ static bool_t status_process_input(StatusInput *statin) {
             status_do_insert(statin, s);
         } else {
             switch (special_key) {
-                case ESC:         return FALSE;
-                case ENTER:       return TRUE;
+                case ESC:         return false;
+                case ENTER:       return true;
                 case HOME:        status_do_home(statin);           break;
                 case END:         status_do_end(statin);            break;
                 case ARROW_LEFT:  status_do_arrow_left(statin);     break;

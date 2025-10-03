@@ -12,7 +12,7 @@ void file_init(File *file) {
     file->cursor.y = 0;
     file->cursor.rx = 0;
     buf_init(&file->buffer);
-    file->is_modified = FALSE;
+    file->is_modified = false;
 }
 void file_free(File *file) {
     buf_free(&file->buffer);
@@ -29,7 +29,7 @@ void file_load(File *file) {
     char *line = NULL;
     size_t line_cap = 0;
     ssize_t line_len;
-    bool_t first_line = TRUE;
+    bool first_line = true;
     Buffer *buf = &file->buffer;
     buf->digest = 0;
     while ((line_len = getline(&line, &line_cap, f)) != -1) {
@@ -43,7 +43,7 @@ void file_load(File *file) {
             line_insert_strn(buf->curr, 0, (unsigned char *)line, (size_t)line_len);
             buf->curr->hash = fnv1a_hash(buf->curr->s, buf->curr->len);
             buf->digest += buf->curr->hash;
-            first_line = FALSE;
+            first_line = false;
         } else {
             Line *newline = line_new(buf->curr, buf->curr->next);
             buf->curr = newline;
@@ -57,7 +57,7 @@ void file_load(File *file) {
     fclose(f);
     buf->curr = buf->begin;
     file->saved_digest = buf->digest;
-    file->is_modified = FALSE;
+    file->is_modified = false;
 }
 void file_save(File *file) {
     FILE *f = fs_fopen(file->path, "wb");
@@ -69,7 +69,7 @@ void file_save(File *file) {
     if (file->buffer.num_lines == 1 && file->buffer.begin->len == 0) {
         fclose(f);
         file->saved_digest = file->buffer.digest;
-        file->is_modified = FALSE;
+        file->is_modified = false;
         return;
     }
     for (Line *line = file->buffer.begin; line; line = line->next) {
@@ -80,12 +80,12 @@ void file_save(File *file) {
     }
     fclose(f);
     file->saved_digest = file->buffer.digest;
-    file->is_modified = FALSE;
+    file->is_modified = false;
 }
-bool_t file_save_prompt(void) {
+bool file_save_prompt(void) {
     if (editor.file.path[0] != '\0') {
         file_save(&editor.file);
-        bool_t ok = (editor.file.buffer.digest == editor.file.saved_digest);
+        bool ok = (editor.file.buffer.digest == editor.file.saved_digest);
         editor.file.is_modified = !ok;
         return ok;
     }
@@ -98,14 +98,14 @@ bool_t file_save_prompt(void) {
             }
             memcpy(editor.file.path, input->s, input->len + 1);
             file_save(&editor.file);
-            bool_t ok = (editor.file.buffer.digest == editor.file.saved_digest);
+            bool ok = (editor.file.buffer.digest == editor.file.saved_digest);
             editor.file.is_modified = !ok;
             line_free(input);
             return ok;
         }
     }
     line_free(input);
-    return FALSE;
+    return false;
 }
 void file_quit_prompt(void) {
     if (editor.file.is_modified) {
@@ -134,9 +134,9 @@ void file_quit_prompt(void) {
     term_switch_to_norm();
     exit(0);
 }
-bool_t file_prompt_save_if_modified(void) {
+bool file_prompt_save_if_modified(void) {
     if (!editor.file.is_modified) {
-        return TRUE;
+        return true;
     }
     Line *input = line_new(NULL, NULL);
     char prompt[256];
@@ -148,31 +148,31 @@ bool_t file_prompt_save_if_modified(void) {
         if (answer == 'y') {
             return file_save_prompt();
         } else if (answer == 'n') {
-            return TRUE;
+            return true;
         }
     }
     line_free(input);
-    return FALSE;
+    return false;
 }
-bool_t file_open_prompt(void) {
+bool file_open_prompt(void) {
     Line *input = line_new(NULL, NULL);
     if (!status_input(input, "Open: ", NULL)) {
         line_free(input);
-        return FALSE;
+        return false;
     }
     if (input->len == 0) {
         line_free(input);
-        return FALSE;
+        return false;
     }
     if (!file_prompt_save_if_modified()) {
         line_free(input);
-        return FALSE;
+        return false;
     }
     char tmp[4096];
     if (input->len >= sizeof(tmp)) {
         line_free(input);
         status_msg("Path too long");
-        return FALSE;
+        return false;
     }
     memcpy(tmp, input->s, input->len);
     tmp[input->len] = '\0';
@@ -192,7 +192,7 @@ bool_t file_open_prompt(void) {
     editor.window.y = 0;
     editor.top_line = editor.file.buffer.begin;
     line_free(input);
-    return TRUE;
+    return true;
 }
 static void file_reset(File *file) {
     buf_free(&file->buffer);
@@ -201,6 +201,6 @@ static void file_reset(File *file) {
     file->cursor.y = 0;
     file->cursor.rx = 0;
     file->saved_digest = file->buffer.digest;
-    file->is_modified = FALSE;
+    file->is_modified = false;
     editor.top_line = file->buffer.begin;
 }

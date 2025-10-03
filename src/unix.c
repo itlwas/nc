@@ -171,9 +171,9 @@ void term_set_cursor(size_t x, size_t y) {
         (unsigned long)(y + 1), (unsigned long)(x + 1));
     term_write((unsigned char *)buf, (size_t)len);
 }
-bool_t fs_exists(const char *path) {
+bool fs_exists(const char *path) {
     struct stat st;
-    if (stat(path, &st) != 0) return FALSE;
+    if (stat(path, &st) != 0) return false;
     return S_ISREG(st.st_mode);
 }
 void fs_canonicalize(const char *path, char *out, size_t size) {
