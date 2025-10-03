@@ -61,7 +61,9 @@ void render_scroll(void) {
         editor.window.y = editor.file.cursor.y - editor.rows + margin + 1;
     }
     size_t hmargin = HSCROLL_MARGIN;
-    size_t text_width = editor.cols - (show_line_numbers ? lineno_pad : 0);
+    bool scrollbar = (editor.file.buffer.num_lines > editor.rows);
+    size_t text_width = editor.cols - (show_line_numbers ? lineno_pad : 0) - (scrollbar ? 1 : 0);
+    if (text_width == 0) text_width = 1;
     if (editor.file.cursor.rx < editor.window.x + hmargin) {
         editor.window.x = (editor.file.cursor.rx < hmargin) ? 0 : editor.file.cursor.rx - hmargin;
     } else if (editor.file.cursor.rx >= editor.window.x + text_width - hmargin) {
