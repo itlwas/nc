@@ -73,12 +73,24 @@ void file_save(File *file) {
         return;
     }
     for (Line *line = file->buffer.begin; line; line = line->next) {
-        fwrite(line->s, 1, line->len, f);
+        size_t written = fwrite(line->s, 1, line->len, f);
+        if (written != line->len) {
+            fclose(f);
+            status_msg("Save failed");
+            return;
+        }
         if (line->next) {
-            fputc('\n', f);
+            if (fputc('\n', f) == EOF) {
+                fclose(f);
+                status_msg("Save failed");
+                return;
+            }
         }
     }
-    fclose(f);
+    if (fclose(f) != 0) {
+        status_msg("Save failed");
+        return;
+    }
     file->saved_digest = file->buffer.digest;
     file->is_modified = false;
 }
