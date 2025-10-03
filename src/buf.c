@@ -89,7 +89,6 @@ void buf_del_line(Buffer *buffer, Line *line) {
         buffer->curr = buffer->begin;
         buffer->num_lines = 1;
         buffer->digest = buffer->begin->hash;
-        editor.file.saved_digest = buffer->digest;
     } else if (!buffer->curr) {
         buffer->curr = buffer->begin;
     }
