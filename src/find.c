@@ -112,8 +112,19 @@ static void draw_segment(Line *line, size_t screen_y, size_t rx_start, size_t rx
     if (rx_width == 0 || screen_y >= editor.rows) return;
     size_t lineno_pad = compute_lineno_pad();
     bool scrollbar = (editor.file.buffer.num_lines > editor.rows);
-    size_t avail_cols = editor.cols - (scrollbar ? 1 : 0);
-    size_t text_cols  = avail_cols - (show_line_numbers ? lineno_pad : 0);
+    // Guard against size_t underflow when terminal is narrower than side UI
+    size_t avail_cols = editor.cols;
+    if (scrollbar && avail_cols > 0) {
+        avail_cols -= 1;
+    }
+    size_t text_cols  = avail_cols;
+    if (show_line_numbers) {
+        if (text_cols > lineno_pad) {
+            text_cols -= lineno_pad;
+        } else {
+            text_cols = 0;
+        }
+    }
     size_t vis_start = (rx_start < editor.window.x) ? editor.window.x : rx_start;
     size_t vis_end   = rx_start + rx_width;
     size_t win_end   = editor.window.x + text_cols;

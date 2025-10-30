@@ -62,7 +62,18 @@ void render_scroll(void) {
     }
     size_t hmargin = HSCROLL_MARGIN;
     bool scrollbar = (editor.file.buffer.num_lines > editor.rows);
-    size_t text_width = editor.cols - (show_line_numbers ? lineno_pad : 0) - (scrollbar ? 1 : 0);
+    // Guard against size_t underflow when terminal is narrower than side UI
+    size_t text_width = editor.cols;
+    if (show_line_numbers) {
+        if (text_width > lineno_pad) {
+            text_width -= lineno_pad;
+        } else {
+            text_width = 0;
+        }
+    }
+    if (scrollbar && text_width > 0) {
+        text_width -= 1;
+    }
     if (text_width == 0) text_width = 1;
     if (editor.file.cursor.rx < editor.window.x + hmargin) {
         editor.window.x = (editor.file.cursor.rx < hmargin) ? 0 : editor.file.cursor.rx - hmargin;
@@ -152,7 +163,11 @@ static void render_rows(void) {
     if (!rowbuf) {
         ensure_screen_buffer();
     }
-    size_t avail_cols = editor.cols - (scrollbar ? 1 : 0);
+    // Guard against size_t underflow for very narrow terminals
+    size_t avail_cols = editor.cols;
+    if (scrollbar && avail_cols > 0) {
+        avail_cols -= 1;
+    }
     for (size_t y = 0; y < editor.rows; ++y) {
         size_t row_len = 0;
         rowbuf[0] = '\0';
@@ -196,7 +211,14 @@ static void render_rows(void) {
         } else {
             const unsigned char *s = line->s;
             size_t i, width, pos = row_len;
-            size_t text_cols = avail_cols - (show_line_numbers ? lineno_pad : 0);
+            size_t text_cols = avail_cols;
+            if (show_line_numbers) {
+                if (text_cols > lineno_pad) {
+                    text_cols -= lineno_pad;
+                } else {
+                    text_cols = 0;
+                }
+            }
             if (editor.window.x > 0) {
                 i = width_to_length(s, editor.window.x);
                 width = editor.window.x;
