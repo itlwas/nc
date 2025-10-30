@@ -12,6 +12,8 @@ void file_init(File *file) {
     file->cursor.y = 0;
     file->cursor.rx = 0;
     buf_init(&file->buffer);
+    /* Keep modified-state invariant for a brand new buffer */
+    file->saved_digest = file->buffer.digest;
     file->is_modified = false;
 }
 void file_free(File *file) {
@@ -52,6 +54,11 @@ void file_load(File *file) {
             newline->hash = fnv1a_hash(newline->s, newline->len);
             buf->digest += newline->hash;
         }
+    }
+    /* Preserve digest invariant for truly empty files (no lines read):
+       the buffer still contains a single empty line with a non-zero hash. */
+    if (first_line) {
+        buf->digest = buf->begin->hash;
     }
     free(line);
     fclose(f);
