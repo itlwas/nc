@@ -102,30 +102,52 @@ static bool status_process_input(StatusInput *statin) {
     }
 }
 static void status_input_print(StatusInput *statin) {
+    // Compute message width in display columns (not bytes)
     char *msg = statin->msg;
     size_t msglen = strlen(msg);
-    if (msglen >= editor.cols - 2) {
+    size_t msgwidth = length_to_width((unsigned char *)msg, msglen);
+    if (msgwidth >= editor.cols - 2) {
+        // If message is too wide for the terminal, fall back to short prompt
         msg = ": ";
         msglen = 2;
+        msgwidth = 2;
     }
-    size_t free_space = editor.cols - msglen - 1;
-    if (statin->cx < statin->charsoff) {
-        statin->charsoff = statin->cx;
-    } else if (statin->cx - statin->charsoff > free_space) {
-        statin->charsoff = statin->cx - free_space;
+    // Available columns for input after the prompt and a trailing space
+    size_t free_space = (editor.cols > msgwidth + 1) ? (editor.cols - msgwidth - 1) : 0;
+
+    // Cursor and left edge positions in display columns (rx)
+    size_t rx_cursor = x_to_rx(statin->input, statin->cx);
+    size_t rx_start  = x_to_rx(statin->input, statin->charsoff);
+
+    // Keep the cursor visible within the input viewport using rx-based scrolling
+    if (rx_cursor < rx_start) {
+        statin->charsoff = rx_to_x(statin->input, rx_cursor);
+    } else if (rx_cursor - rx_start > free_space) {
+        statin->charsoff = rx_to_x(statin->input, rx_cursor - free_space);
     }
-    size_t input_width = line_get_width(statin->input);
+
+    // Recompute rx_start after potential change to charsoff
+    rx_start = x_to_rx(statin->input, statin->charsoff);
+
+    // Determine the slice of input to render given the available columns
     size_t start = mbnum_to_index(statin->input->s, statin->charsoff);
-    size_t len = (input_width - statin->charsoff > free_space)
+    size_t input_width = line_get_width(statin->input);
+    size_t remaining_rx = (input_width > rx_start) ? (input_width - rx_start) : 0;
+    size_t len = (remaining_rx > free_space)
         ? width_to_length(statin->input->s + start, free_space)
         : statin->input->len - start;
+
+    // Render the status line
     term_set_cursor(0, editor.rows);
     term_write((const unsigned char *)STATUS_BG_ON, sizeof(STATUS_BG_ON) - 1);
     term_clear_line();
     term_write((unsigned char *)msg, msglen);
     term_write(statin->input->s + start, len);
     term_write((const unsigned char *)STATUS_BG_OFF, sizeof(STATUS_BG_OFF) - 1);
-    term_set_cursor(statin->cx + length_to_width((unsigned char *)msg, msglen) - statin->charsoff, editor.rows);
+
+    // Place the cursor at the correct column in the status line
+    size_t cursor_col = msgwidth + (rx_cursor - rx_start);
+    term_set_cursor(cursor_col, editor.rows);
 }
 static void status_realloc(size_t len) {
     if (len < editor.file.status.cap) return;
