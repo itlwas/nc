@@ -106,32 +106,60 @@ void term_write(const unsigned char *s, size_t len) {
     if (len == 0) {
         return;
     }
-    int required = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s, (int)len, NULL, 0);
+    // When VT is unavailable, strip ANSI escape sequences to avoid rendering raw codes.
+    const unsigned char *data = s;
+    size_t dlen = len;
+    if (!vt_alternate) {
+        static unsigned char *fbuf = NULL;
+        static size_t fcap = 0;
+        if (dlen > fcap) {
+            fbuf = (unsigned char *)xrealloc(fbuf, dlen);
+            fcap = dlen;
+        }
+        size_t out = 0;
+        for (size_t i = 0; i < dlen;) {
+            if (data[i] == 0x1b && i + 1 < dlen && data[i + 1] == '[') {
+                size_t j = i + 2;
+                // Skip until a final byte of a CSI sequence (0x40..0x7E)
+                while (j < dlen) {
+                    unsigned char c = data[j++];
+                    if (c >= 0x40 && c <= 0x7E) break;
+                }
+                i = j;
+                continue;
+            }
+            fbuf[out++] = data[i++];
+        }
+        data = fbuf;
+        dlen = out;
+        if (dlen == 0) return;
+    }
+    int required = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)data, (int)dlen, NULL, 0);
     static wchar_t *wbuf = NULL;
     static size_t wcap = 0;
     if (required <= 0) {
-        if (len > wcap) {
-            wbuf = (wchar_t *)xrealloc(wbuf, len * sizeof(wchar_t));
-            wcap = len;
+        if (dlen > wcap) {
+            wbuf = (wchar_t *)xrealloc(wbuf, dlen * sizeof(wchar_t));
+            wcap = dlen;
         }
-        for (size_t i = 0; i < len; ++i) {
-            wbuf[i] = (s[i] < 0x80) ? (wchar_t)s[i] : L'?';
+        for (size_t i = 0; i < dlen; ++i) {
+            wbuf[i] = (data[i] < 0x80) ? (wchar_t)data[i] : L'?';
         }
-        write_console_wide(wbuf, len);
+        write_console_wide(wbuf, dlen);
         return;
     }
     if ((size_t)required > wcap) {
         wbuf = (wchar_t *)xrealloc(wbuf, (size_t)required * sizeof(wchar_t));
         wcap = (size_t)required;
     }
-    if (MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s, (int)len, wbuf, required) != required) {
-        size_t n = len;
+    if (MultiByteToWideChar(CP_UTF8, 0, (LPCCH)data, (int)dlen, wbuf, required) != required) {
+        size_t n = dlen;
         if (n > wcap) {
             wbuf = (wchar_t *)xrealloc(wbuf, n * sizeof(wchar_t));
             wcap = n;
         }
         for (size_t i = 0; i < n; ++i) {
-            wbuf[i] = (s[i] < 0x80) ? (wchar_t)s[i] : L'?';
+            wbuf[i] = (data[i] < 0x80) ? (wchar_t)data[i] : L'?';
         }
         write_console_wide(wbuf, n);
         return;
